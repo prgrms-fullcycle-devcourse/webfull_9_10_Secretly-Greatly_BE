@@ -17,7 +17,7 @@ Secretly Greatly는 개발자 친화적인 UI를 제공하는 주식 정보 서�
 * NestJS
 * TypeScript
 * Prisma
-* PostgreSQL (예정)
+* PostgreSQL
 * Docker
 
 ### Infrastructure
