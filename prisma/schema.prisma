@@ -1,0 +1,344 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StealthTheme {
+  IDE_DARK
+  TERMINAL
+  EXCEL
+  INBOX
+}
+
+enum PanicKey {
+  ESC
+  Q
+  CTRL_Q
+}
+
+enum PanicScreenType {
+  CONFLUENCE
+  GOOGLE_DOCS
+  NOTION
+  CUSTOM_URL
+}
+
+enum AssetType {
+  STOCK
+  CRYPTO
+  ETF
+  INDEX
+}
+
+enum Market {
+  KR
+  US
+  CRYPTO
+}
+
+enum Exchange {
+  KRX
+  NASDAQ
+  NYSE
+  BINANCE
+  UPBIT
+}
+
+enum IndicatorType {
+  KOSPI
+  NASDAQ
+  NASDAQ_FUTURE
+  USD_KRW
+  US_10Y_BOND
+  VIX_INDEX
+  BTC_USDT
+}
+
+enum Country {
+  US
+  KR
+  JP
+  EU
+  CN
+}
+
+enum ImpactLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+
+enum MessageType {
+  NORMAL
+  SYSTEM
+  NOTICE
+  BOT
+}
+
+enum AlertLevel {
+  WARN
+  CRITICAL
+}
+
+enum AlertType {
+  PRICE_UP
+  PRICE_DOWN
+  VOLUME_SPIKE
+  NEWS
+  ECONOMIC_EVENT
+  SYSTEM
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String?  @unique
+  nickname  String   @unique
+  password  String?
+
+  anonymousSessions AnonymousSession[]
+  setting           UserSetting?
+  watchlists        Watchlist[]
+  positions         Position[]
+  chatMessages      ChatMessage[]
+  chatReports       ChatReport[]
+  alertLogs         AlertLog[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  passwordChangedAt DateTime? @map("password_changed_at")
+
+  @@map("users")
+}
+
+model AnonymousSession {
+  id            Int      @id @default(autoincrement())
+  userId        String   @map("user_id") @db.Uuid
+  anonymousUuid String   @unique @map("anonymous_uuid")
+  expiredAt     DateTime @map("expired_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("anonymous_sessions")
+}
+
+model UserSetting {
+  id               Int             @id @default(autoincrement())
+  userId           String          @unique @map("user_id") @db.Uuid
+  stealthTheme     StealthTheme    @default(IDE_DARK) @map("stealth_theme")
+  panicKey         PanicKey        @default(ESC) @map("panic_key")
+  panicScreenType  PanicScreenType @default(CONFLUENCE) @map("panic_screen_type")
+  panicRedirectUrl String?         @map("panic_redirect_url")
+  reduceMotion     Boolean         @default(false) @map("reduce_motion")
+  disguiseTabs     Boolean         @default(true) @map("disguise_tabs")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model Stock {
+  id        Int       @id @default(autoincrement())
+  code      String
+  name      String
+  market    Market
+  exchange  Exchange
+  assetType AssetType @map("asset_type")
+
+  watchlists      Watchlist[]
+  snapshots       MarketSnapshot[]
+  chatRoom        ChatRoom?
+  news            News[]
+  alertLogs       AlertLog[]
+  positions       Position[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([code, exchange])
+  @@map("stocks")
+}
+
+model Watchlist {
+  id            Int     @id @default(autoincrement())
+  userId        String  @map("user_id") @db.Uuid
+  stockId       Int     @map("stock_id")
+  aliasFilename String? @map("alias_filename")
+  isHidden      Boolean @default(false) @map("is_hidden")
+  sortOrder     Int     @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stockId])
+  @@index([userId, sortOrder])
+  @@map("watchlists")
+}
+
+model MarketSnapshot {
+  id           Int      @id @default(autoincrement())
+  stockId      Int      @map("stock_id")
+  currentPrice Decimal  @map("current_price") @db.Decimal(18, 4)
+  changeRate   Decimal  @map("change_rate") @db.Decimal(8, 4)
+  prevClose    Decimal? @map("prev_close") @db.Decimal(18, 4)
+  dayHigh      Decimal? @map("day_high") @db.Decimal(18, 4)
+  dayLow       Decimal? @map("day_low") @db.Decimal(18, 4)
+  volume       BigInt?
+  capturedAt   DateTime @default(now()) @map("captured_at")
+
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@index([stockId, capturedAt])
+  @@map("market_snapshots")
+}
+
+model MarketIndicator {
+  id            Int           @id @default(autoincrement())
+  indicatorType IndicatorType @map("indicator_type")
+  value         Decimal       @db.Decimal(18, 4)
+  changeRate    Decimal?      @map("change_rate") @db.Decimal(8, 4)
+  recordedAt    DateTime      @default(now()) @map("recorded_at")
+
+  @@index([indicatorType, recordedAt])
+  @@map("market_indicators")
+}
+
+model EconomicEvent {
+  id          Int         @id @default(autoincrement())
+  title       String
+  country     Country
+  eventTime   DateTime    @map("event_time")
+  impactLevel ImpactLevel @map("impact_level")
+  sourceUrl   String?     @map("source_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([eventTime])
+  @@index([country, impactLevel])
+  @@map("economic_events")
+}
+
+model Position {
+  id                  Int     @id @default(autoincrement())
+  userId              String  @map("user_id") @db.Uuid
+  stockId             Int     @map("stock_id")
+  averagePrice        Decimal @map("average_price") @db.Decimal(18, 4)
+  quantity            Decimal @db.Decimal(18, 8)
+  totalInvestedAmount Decimal @map("total_invested_amount") @db.Decimal(18, 4)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stock       Stock                @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  simulations PositionSimulation[]
+
+  @@unique([userId, stockId])
+  @@map("positions")
+}
+
+model PositionSimulation {
+  id               Int     @id @default(autoincrement())
+  positionId       Int     @map("position_id")
+  buyPrice         Decimal @map("buy_price") @db.Decimal(18, 4)
+  buyQuantity      Decimal @map("buy_quantity") @db.Decimal(18, 8)
+  expectedAvgPrice Decimal @map("expected_avg_price") @db.Decimal(18, 4)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@map("position_simulations")
+}
+
+model ChatRoom {
+  id      Int @id @default(autoincrement())
+  stockId Int @unique @map("stock_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  stock    Stock         @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@map("chat_rooms")
+}
+
+
+model ChatMessage {
+  id          Int         @id @default(autoincrement())
+  roomId      Int         @map("room_id")
+  userId      String?     @map("user_id") @db.Uuid
+  message     String
+  messageType MessageType @default(NORMAL) @map("message_type")
+  reportCount Int         @default(0) @map("report_count")
+  isHidden    Boolean     @default(false) @map("is_hidden")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  room    ChatRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user    User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reports ChatReport[]
+
+  @@index([roomId, createdAt])
+  @@map("chat_messages")
+}
+
+model ChatReport {
+  id            Int    @id @default(autoincrement())
+  chatMessageId Int    @map("chat_message_id")
+  userId        String @map("user_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  chatMessage ChatMessage @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatMessageId, userId])
+  @@map("chat_reports")
+}
+
+model AlertLog {
+  id         Int        @id @default(autoincrement())
+  userId     String     @map("user_id") @db.Uuid
+  stockId    Int        @map("stock_id")
+  level      AlertLevel
+  changeRate Decimal?   @map("change_rate") @db.Decimal(8, 4)
+  message    String
+  alertType  AlertType  @map("alert_type")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("alert_logs")
+}
+
+model News {
+  id          Int      @id @default(autoincrement())
+  stockId     Int      @map("stock_id")
+  title       String
+  originalUrl String   @unique @map("original_url")
+  summary     String?
+  sourceName  String?  @map("source_name")
+  publishedAt DateTime @map("published_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@index([stockId, publishedAt])
+  @@map("news")
+}
