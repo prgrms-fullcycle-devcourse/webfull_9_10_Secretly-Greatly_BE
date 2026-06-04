@@ -8,7 +8,8 @@
     "start:dev": "nest start --watch",
     "build": "nest build",
     "start:prod": "node dist/main.js",
-    "lint": "eslint \"src/**/*.ts\""
+    "lint": "eslint \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"prisma/**/*.prisma\""
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -30,6 +31,8 @@
     "@types/express": "^5.0.6",
     "@types/node": "^22.19.19",
     "@types/passport-jwt": "^4.0.1",
+    "eslint": "^10.4.1",
+    "prettier": "^3.8.3",
     "prisma": "^6.19.0",
     "typescript": "^5.9.3"
   }
