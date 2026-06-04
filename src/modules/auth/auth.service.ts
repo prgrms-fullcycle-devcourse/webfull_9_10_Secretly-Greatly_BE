@@ -1,8 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { LoginDto } from './dto/login.dto';
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import * as bcrypt from "bcrypt";
+import { PrismaService } from "../../common/prisma/prisma.service";
+import { LoginDto } from "./dto/login.dto";
 
 @Injectable()
 export class AuthService {
@@ -19,7 +19,9 @@ export class AuthService {
     });
 
     if (!user || !user.password) {
-      throw new UnauthorizedException('이메일 또는 비밀번호가 일치하지 않습니다.');
+      throw new UnauthorizedException(
+        "이메일 또는 비밀번호가 일치하지 않습니다.",
+      );
     }
 
     const isPasswordMatched = await bcrypt.compare(
@@ -28,7 +30,9 @@ export class AuthService {
     );
 
     if (!isPasswordMatched) {
-      throw new UnauthorizedException('이메일 또는 비밀번호가 일치하지 않습니다.');
+      throw new UnauthorizedException(
+        "이메일 또는 비밀번호가 일치하지 않습니다.",
+      );
     }
 
     const accessToken = await this.jwtService.signAsync({
@@ -41,7 +45,7 @@ export class AuthService {
       statusCode: 200,
       timestamp: new Date().toISOString(),
       path,
-      message: '로그인에 성공했습니다. 에디터 세션이 동기화됩니다.',
+      message: "로그인에 성공했습니다. 에디터 세션이 동기화됩니다.",
       data: {
         userId: user.id,
         fixedNickname: user.nickname,

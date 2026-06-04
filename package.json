@@ -9,7 +9,7 @@
     "build": "nest build",
     "start:prod": "node dist/main.js",
     "lint": "eslint \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"prisma/**/*.prisma\""
+    "format:check": "prettier --check \"src/**/*.ts\""
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
