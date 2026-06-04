@@ -15,7 +15,7 @@ export class AppController {
   healthCheck() {
     return {
       status: 'ok',
-      message: 'Health check success',
+      message: 'Health check succeㄴㄴㄴs',
     };
   }
 }
