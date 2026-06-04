@@ -4,10 +4,18 @@ import { Controller, Get } from '@nestjs/common';
 @Controller()
 export class AppController {
   @Get()
-  healthCheck() {
+  root() {
     return {
       status: 'ok',
       message: 'Secretly Greatly Backend is running',
+    };
+  }
+
+  @Get('health')
+  healthCheck() {
+    return {
+      status: 'ok',
+      message: 'Health check success',
     };
   }
 }
