@@ -1,247 +1,248 @@
-# Secretly Greatly Backend EC2 배포 작업 기록
+# Docker 기반 EC2 테스트 배포 서버 구축
 
-## 작업 목표
+## 개요
 
-NestJS 백엔드 서버를 Docker 컨테이너로 실행하고 AWS EC2 환경에 배포한다.
-
----
-
-## 1. GitHub 작업
-
-### 브랜치 생성
-
-```bash
-git switch -c feat-docker
-```
-
-### 원격 저장소 Push
-
-초기 Push 시 권한 문제가 발생하였다.
-
-```bash
-git push origin feat-docker
-
-remote: Permission denied
-fatal: unable to access ...
-```
-
-팀 저장소 권한 설정 이후 Push 완료.
+Secretly-Greatly 백엔드 프로젝트의 테스트 배포 환경을 AWS EC2 + Docker + Nginx 기반으로 구축하였다.
 
 ---
 
-## 2. AWS EC2 인스턴스 생성
+## 배포 환경
 
-### 생성 정보
+| 항목            | 내용                               |
+| ------------- | -------------------------------- |
+| Cloud         | AWS EC2                          |
+| Region        | ap-northeast-2 (서울)              |
+| OS            | Ubuntu Server 26.04 LTS          |
+| Instance Type | t3.micro                         |
+| Container     | Docker                           |
+| Orchestration | Docker Compose                   |
+| Reverse Proxy | Nginx                            |
+| Application   | NestJS                           |
+| Repository    | webfull_9_10_Secretly-Greatly_BE |
 
-| 항목            | 값                       |
-| ------------- | ----------------------- |
-| OS            | Ubuntu Server 26.04 LTS |
-| Instance Type | t3.micro                |
-| Region        | ap-northeast-2          |
-| Storage       | 30GB gp3                |
-| Key Pair      | Secretly-key.pem        |
+---
 
-### 네트워크 설정
+## 네트워크 구성
 
-초기에는 Private Subnet을 선택하여 Public IP가 생성되지 않는 문제가 발생하였다.
+### VPC 생성
 
-기존 설정:
+기존 프로젝트에서 사용하던 VPC가 다른 팀 자원인 것으로 확인되어 전용 VPC를 신규 생성하였다.
 
-```txt
-프로젝트-subnet-private2-ap-northeast-2b
-```
+생성 리소스:
 
-수정 후:
+* Secretly-Greatly-vpc
+* Internet Gateway
+* Public Subnet (2개)
+* Private Subnet (2개)
+* Route Table
+* S3 Endpoint
 
-```txt
-프로젝트-subnet-public1-ap-northeast-2a
-```
+구성:
 
-### Public IP 활성화
-
-```txt
-퍼블릭 IP 자동 할당
-→ 활성화
+```text
+Secretly-Greatly-vpc
+├── Public Subnet 1 (ap-northeast-2a)
+├── Public Subnet 2 (ap-northeast-2b)
+├── Private Subnet 1 (ap-northeast-2a)
+└── Private Subnet 2 (ap-northeast-2b)
 ```
 
 ---
 
-## 3. 보안 그룹 설정
+## Security Group 설정
 
-사용 중인 보안 그룹:
+보안 그룹 생성:
 
-```txt
-launch-wizard-3
+```text
+Secretly-Greatly-SG
 ```
 
 인바운드 규칙:
 
-| Protocol | Port |
-| -------- | ---- |
-| SSH      | 22   |
-| HTTP     | 80   |
-| HTTPS    | 443  |
+| Protocol | Port | Source    |
+| -------- | ---- | --------- |
+| SSH      | 22   | 0.0.0.0/0 |
+| HTTP     | 80   | 0.0.0.0/0 |
+| HTTPS    | 443  | 0.0.0.0/0 |
 
-3000 포트는 운영 환경을 고려하여 개방하지 않음.
+설명:
+
+* SSH 접속용
+* Nginx HTTP 서비스용
+* HTTPS 적용 대비
 
 ---
 
-## 4. EC2 접속
+## EC2 생성
 
-### SSH 연결
+인스턴스 정보:
+
+```text
+Name: Secretly-Greatly-Instance
+AMI: Ubuntu Server 26.04 LTS
+Type: t3.micro
+Storage: 30GB (gp3)
+Key Pair: Secretly-key
+```
+
+퍼블릭 IP:
+
+```text
+3.38.95.246
+```
+
+SSH 접속:
 
 ```bash
-ssh -i Secretly-key.pem ubuntu@43.201.82.40
+ssh -i Secretly-key.pem ubuntu@3.38.95.246
 ```
-
-최초 접속 시:
-
-```txt
-Are you sure you want to continue connecting?
-```
-
-응답:
-
-```txt
-yes
-```
-
-접속 성공.
 
 ---
 
-## 5. Docker 설치
+## 서버 초기 설정
 
-### 패키지 업데이트
+패키지 업데이트:
 
 ```bash
 sudo apt update
+sudo apt upgrade -y
 ```
 
-### Docker 설치
+Git 설치 확인:
 
 ```bash
-sudo apt install -y docker.io
+git --version
 ```
 
-### Docker 실행
+Docker 설치:
 
 ```bash
+sudo apt update
+
+sudo apt install docker.io docker-compose-v2 -y
+
 sudo systemctl enable docker
 sudo systemctl start docker
 ```
 
-확인:
+Docker 확인:
 
 ```bash
 docker --version
-```
-
----
-
-## 6. Docker Compose 설치
-
-```bash
-sudo apt install -y docker-compose-v2
-```
-
-확인:
-
-```bash
 docker compose version
 ```
 
 ---
 
-## 7. 프로젝트 Clone
+## 프로젝트 배포
+
+### Repository Clone
 
 ```bash
 git clone https://github.com/prgrms-fullcycle-devcourse/webfull_9_10_Secretly-Greatly_BE.git
-```
 
-프로젝트 디렉터리 이동:
-
-```bash
 cd webfull_9_10_Secretly-Greatly_BE
 ```
 
 ---
 
-## 8. 환경 변수 파일 생성
-
-프로젝트에 `.env` 파일이 존재하지 않아 직접 생성.
-
-```env
-PORT=3000
-
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/secretly_greatly"
-```
-
-생성 확인:
+### 프로젝트 구조 확인
 
 ```bash
-ls -la
+ls -al
+```
+
+확인 파일:
+
+```text
+Dockerfile
+docker-compose.yml
+package.json
+prisma/
+src/
 ```
 
 ---
 
-## 9. Docker 이미지 빌드 및 실행
-
-실행:
+### 환경 변수 생성
 
 ```bash
-sudo docker compose up -d --build
+nano .env
 ```
 
-결과:
+예시:
 
-```txt
-✔ backend Built
-✔ Network Created
-✔ Container secretly-greatly-backend Started
+```env
+PORT=3000
+DATABASE_URL="postgresql://test:test@localhost:5432/test"
+```
+
+---
+
+## Docker Build 및 실행
+
+빌드:
+
+```bash
+docker compose up -d --build
 ```
 
 실행 확인:
 
 ```bash
-sudo docker ps -a
+docker ps
 ```
 
 결과:
 
-```txt
+```text
 secretly-greatly-backend
-STATUS: Up
-PORTS: 0.0.0.0:3000->3000/tcp
 ```
 
 ---
 
-## 10. NestJS 실행 확인
-
-로그 확인:
+## 컨테이너 로그 확인
 
 ```bash
-sudo docker logs secretly-greatly-backend
+docker logs secretly-greatly-backend
 ```
 
-결과:
+정상 로그:
 
-```txt
+```text
 Nest application successfully started
 Server running on http://localhost:3000
 ```
 
 ---
 
-## 11. Nginx Reverse Proxy 설정
+## Health Check 확인
 
-운영 환경에서는 3000 포트를 외부에 직접 노출하지 않기 위해 Nginx를 사용.
+서버 내부 확인:
+
+```bash
+curl http://localhost:3000
+```
+
+응답:
+
+```json
+{
+  "status": "ok",
+  "message": "Secretly Greatly Backend is running"
+}
+```
+
+배포 성공 확인.
+
+---
+
+## Nginx Reverse Proxy 설정
 
 설치:
 
 ```bash
-sudo apt install -y nginx
+sudo apt install nginx -y
 ```
 
 설정 파일 생성:
@@ -255,11 +256,12 @@ sudo nano /etc/nginx/sites-available/secretly-greatly
 ```nginx
 server {
     listen 80;
-    server_name 43.201.82.40;
+    server_name 3.38.95.246;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
 
+        proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -268,77 +270,58 @@ server {
 }
 ```
 
-적용:
+활성화:
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/secretly-greatly /etc/nginx/sites-enabled/
 
+sudo rm -f /etc/nginx/sites-enabled/default
+```
+
+설정 검사:
+
+```bash
 sudo nginx -t
+```
 
-sudo systemctl restart nginx
+재시작:
+
+```bash
+sudo systemctl reload nginx
 ```
 
 ---
 
-## 12. 외부 접속 확인
+## 최종 배포 구조
 
-접속:
-
-```txt
-http://43.201.82.40
+```text
+Internet
+    ↓
+AWS EC2
+    ↓
+Nginx (80)
+    ↓
+Docker Container
+    ↓
+NestJS (3000)
 ```
-
-응답:
-
-```json
-{
-  "message": "Cannot GET /",
-  "error": "Not Found",
-  "statusCode": 404
-}
-```
-
-이는 `/` 라우트가 존재하지 않기 때문이며,
-
-```txt
-브라우저
-↓
-EC2
-↓
-Nginx
-↓
-Docker
-↓
-NestJS
-```
-
-경로가 정상적으로 연결되었음을 의미한다.
 
 ---
 
-## 현재 상태
+## 결과
 
-### 완료
+구축 완료 항목:
 
+* VPC 구성
+* Public/Private Subnet 구성
+* Internet Gateway 연결
+* Security Group 설정
 * EC2 생성
-* Public Subnet 설정
-* Public IP 할당
-* SSH 접속
 * Docker 설치
-* Docker Compose 설치
-* Git Clone
-* .env 설정
+* GitHub Repository Clone
 * Docker Build
 * NestJS 실행
+* Health Check 확인
 * Nginx Reverse Proxy 설정
-* 외부 접속 확인
 
-### 향후 작업
-
-* Health Check API 추가
-* PostgreSQL 컨테이너 구성
-* Prisma Migration 적용
-* GitHub Actions CI/CD 구성
-* 도메인 연결
-* HTTPS 인증서(Let's Encrypt) 적용
-* 운영용 Nginx 설정 정리
+테스트 배포 서버 구축 완료.
