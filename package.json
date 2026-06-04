@@ -1,6 +1,7 @@
 {
   "name": "secretly-greatly-be",
   "version": "0.1.0",
+  "packageManager": "pnpm@10.33.2",
   "private": true,
   "scripts": {
     "start": "nest start",
