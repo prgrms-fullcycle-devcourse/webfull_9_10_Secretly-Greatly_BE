@@ -1,0 +1,27 @@
+name: PR Title Check
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  check-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "검사할 PR 제목: $PR_TITLE"
+          # 형식: [타입] #이슈번호 제목
+          # ex) [feat] #1 회원가입 API 구현
+          PATTERN='^\[(feat|fix|docs|chore|refactor|test|style|design|hotfix)\] #[0-9]+ .+'
+          if echo "$PR_TITLE" | grep -qE "$PATTERN"; then
+            echo "✅ PR 제목 형식이 올바릅니다."
+          else
+            echo "::error::PR 제목 형식이 올바르지 않습니다."
+            echo "::error::올바른 형식: [타입] #이슈번호 제목"
+            echo "::error::예시: [feat] #1 회원가입 API 구현"
+            echo "::error::허용 타입: feat, fix, docs, chore, refactor, test, style, design, hotfix"
+            exit 1
+          fi
