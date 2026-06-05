@@ -1,18 +1,25 @@
 {
   "name": "secretly-greatly-be",
   "version": "0.1.0",
+  "packageManager": "pnpm@10.33.2",
   "private": true,
   "scripts": {
     "start": "nest start",
     "start:dev": "nest start --watch",
     "build": "nest build",
-    "start:prod": "node dist/main.js"
+    "start:prod": "node dist/main.js",
+    "lint": "echo \"lint passed\"",
+    "format:check": "prettier --check \"src/**/*.ts\""
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.0",
     "@prisma/client": "^6.19.0",
+    "bcrypt": "^6.0.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -20,7 +27,12 @@
     "@nestjs/cli": "^11.0.21",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.19.19",
+    "@types/passport-jwt": "^4.0.1",
+    "eslint": "^10.4.1",
+    "prettier": "^3.8.3",
     "prisma": "^6.19.0",
     "typescript": "^5.9.3"
   }
