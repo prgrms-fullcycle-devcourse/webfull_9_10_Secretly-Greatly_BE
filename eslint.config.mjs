@@ -15,7 +15,7 @@ export default tseslint.config(
     languageOptions: {
       globals: {
         ...globals.node,
-        ...globals.jest, // 테스트 안 쓰면 이 줄 빼도 됨
+        ...globals.jest,
       },
       sourceType: "module",
       parserOptions: {
