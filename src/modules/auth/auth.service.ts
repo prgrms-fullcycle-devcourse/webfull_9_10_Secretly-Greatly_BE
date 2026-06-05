@@ -13,7 +13,47 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto, path: string) {
-    // 기존 login 코드 그대로
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: loginDto.email,
+      },
+    });
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException(
+        "이메일 또는 비밀번호가 일치하지 않습니다.",
+      );
+    }
+
+    const isPasswordMatched = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+
+    if (!isPasswordMatched) {
+      throw new UnauthorizedException(
+        "이메일 또는 비밀번호가 일치하지 않습니다.",
+      );
+    }
+
+    const accessToken = await this.jwtService.signAsync({
+      sub: user.id,
+      email: user.email,
+      nickname: user.nickname,
+    });
+
+    return {
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+      path,
+      message: "로그인에 성공했습니다. 에디터 세션이 동기화됩니다.",
+      data: {
+        userId: user.id,
+        fixedNickname: user.nickname,
+        accessToken,
+      },
+      error: null,
+    };
   }
 
   async createAnonymousSession(path: string) {
