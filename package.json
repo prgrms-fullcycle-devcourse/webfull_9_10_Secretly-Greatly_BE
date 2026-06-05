@@ -8,8 +8,10 @@
     "start:dev": "nest start --watch",
     "build": "nest build",
     "start:prod": "node dist/main.js",
-    "lint": "echo \"lint passed\"",
-    "format:check": "prettier --check \"src/**/*.ts\""
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "prepare": "husky && git config --local commit.template .gitmessage"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -24,6 +26,8 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
     "@nestjs/cli": "^11.0.21",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
@@ -31,9 +35,21 @@
     "@types/express": "^5.0.6",
     "@types/node": "^22.19.19",
     "@types/passport-jwt": "^4.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.60.1",
+    "@typescript-eslint/parser": "^8.60.1",
     "eslint": "^10.4.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
     "prettier": "^3.8.3",
     "prisma": "^6.19.0",
     "typescript": "^5.9.3"
+  }, 
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }
