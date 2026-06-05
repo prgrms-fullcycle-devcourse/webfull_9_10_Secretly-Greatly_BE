@@ -2,6 +2,8 @@ export default {
   // 기본적으로 널리 쓰이는 표준 규칙(Conventional)을 베이스로 가져옴
   extends: ["@commitlint/config-conventional"],
   
+  ignores: ["eslint.config.mjs", "commitlint.config.mjs"],
+  
   rules: {
     // 허용할 커밋 메시지 타입 목록을 딱 아래 규칙들로만 제한
     "type-enum": [
