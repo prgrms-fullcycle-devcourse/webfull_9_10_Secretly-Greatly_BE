@@ -9,7 +9,9 @@ import {
 import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import {
+  ANONYMOUS_API_DESCRIPTION,
   ANONYMOUS_SUCCESS_RESPONSE,
+  LOGIN_API_DESCRIPTION,
   LOGIN_SUCCESS_RESPONSE,
 } from "./auth.swagger";
 import { LoginDto } from "./dto/login.dto";
@@ -21,7 +23,10 @@ export class AuthController {
 
   @Post("login")
   @HttpCode(200)
-  @ApiOperation({ summary: "로그인" })
+  @ApiOperation({
+    summary: "로그인",
+    description: LOGIN_API_DESCRIPTION,
+  })
   @ApiBody({ type: LoginDto })
   @ApiResponse({
     status: 200,
@@ -40,7 +45,10 @@ export class AuthController {
 
   @Post("anonymous")
   @HttpCode(201)
-  @ApiOperation({ summary: "익명 임시 세션 발급" })
+  @ApiOperation({
+    summary: "익명 임시 세션 발급",
+    description: ANONYMOUS_API_DESCRIPTION,
+  })
   @ApiCookieAuth("accessToken")
   @ApiResponse({
     status: 201,
