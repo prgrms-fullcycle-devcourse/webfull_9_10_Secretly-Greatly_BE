@@ -1,20 +1,54 @@
 import { Body, Controller, HttpCode, Post, Req, Res } from "@nestjs/common";
+import {
+  ApiBody,
+  ApiCookieAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
 import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
+import {
+  ANONYMOUS_SUCCESS_RESPONSE,
+  LOGIN_SUCCESS_RESPONSE,
+} from "./auth.swagger";
 import { LoginDto } from "./dto/login.dto";
 
+@ApiTags("Auth")
 @Controller("api/auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post("login")
   @HttpCode(200)
+  @ApiOperation({ summary: "로그인" })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({
+    status: 200,
+    description: "로그인 성공",
+    schema: {
+      example: LOGIN_SUCCESS_RESPONSE,
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: "이메일 또는 비밀번호 불일치",
+  })
   login(@Body() loginDto: LoginDto, @Req() req: Request) {
     return this.authService.login(loginDto, req.url);
   }
 
   @Post("anonymous")
   @HttpCode(201)
+  @ApiOperation({ summary: "익명 임시 세션 발급" })
+  @ApiCookieAuth("accessToken")
+  @ApiResponse({
+    status: 201,
+    description: "익명 임시 세션 발급 성공",
+    schema: {
+      example: ANONYMOUS_SUCCESS_RESPONSE,
+    },
+  })
   async createAnonymousSession(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -28,9 +62,10 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
-    // 애리: accessToken 선언 후 미사용으로 오류가 떠서, 우선 주석처리 해두었습니다. 향후 삭제해주세요.
-    // const { accessToken, ...dataWithoutAccessToken } = result.data;
-    const { ...dataWithoutAccessToken } = result.data;
+    const dataWithoutAccessToken = {
+      userId: result.data.userId,
+      anonymousToken: result.data.anonymousToken,
+    };
 
     return {
       ...result,
