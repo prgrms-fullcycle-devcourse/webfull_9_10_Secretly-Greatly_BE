@@ -9,11 +9,17 @@ import {
 import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import {
-  ANONYMOUS_API_DESCRIPTION,
-  ANONYMOUS_API_RESPONSE,
   LOGIN_API_DESCRIPTION,
   LOGIN_API_RESPONSE,
-} from "./auth.swagger";
+  LOGIN_INTERNAL_SERVER_ERROR_API_RESPONSE,
+  LOGIN_UNAUTHORIZED_API_RESPONSE,
+} from "./swagger/login.swagger";
+
+import {
+  ANONYMOUS_API_DESCRIPTION,
+  ANONYMOUS_API_RESPONSE,
+  ANONYMOUS_INTERNAL_SERVER_ERROR_API_RESPONSE,
+} from "./swagger/anonymous.swagger";
 import { LoginRequestDto } from "./dto/req/login.request.dto";
 
 @ApiTags("Auth")
@@ -29,10 +35,8 @@ export class AuthController {
   })
   @ApiBody({ type: LoginRequestDto })
   @ApiResponse(LOGIN_API_RESPONSE)
-  @ApiResponse({
-    status: 401,
-    description: "이메일 또는 비밀번호 불일치",
-  })
+  @ApiResponse(LOGIN_UNAUTHORIZED_API_RESPONSE)
+  @ApiResponse(LOGIN_INTERNAL_SERVER_ERROR_API_RESPONSE)
   login(@Body() loginRequestDto: LoginRequestDto, @Req() req: Request) {
     return this.authService.login(loginRequestDto, req.url);
   }
@@ -45,6 +49,7 @@ export class AuthController {
   })
   @ApiCookieAuth("accessToken")
   @ApiResponse(ANONYMOUS_API_RESPONSE)
+  @ApiResponse(ANONYMOUS_INTERNAL_SERVER_ERROR_API_RESPONSE)
   async createAnonymousSession(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
