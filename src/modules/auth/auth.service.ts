@@ -3,7 +3,7 @@ import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
 import { PrismaService } from "../../common/prisma/prisma.service";
-import { LoginDto } from "./dto/login.dto";
+import { LoginRequestDto } from "./dto/req/login.request.dto";
 
 @Injectable()
 export class AuthService {
@@ -12,10 +12,10 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(loginDto: LoginDto, path: string) {
+  async login(loginRequestDto: LoginRequestDto, path: string) {
     const user = await this.prisma.user.findUnique({
       where: {
-        email: loginDto.email,
+        email: loginRequestDto.email,
       },
     });
 
@@ -26,7 +26,7 @@ export class AuthService {
     }
 
     const isPasswordMatched = await bcrypt.compare(
-      loginDto.password,
+      loginRequestDto.password,
       user.password,
     );
 

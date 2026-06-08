@@ -28,3 +28,19 @@ export const ANONYMOUS_SUCCESS_RESPONSE = {
   },
   error: null,
 };
+
+export const LOGIN_API_RESPONSE = {
+  status: 200,
+  description: "로그인 성공",
+  schema: {
+    example: LOGIN_SUCCESS_RESPONSE,
+  },
+};
+
+export const ANONYMOUS_API_RESPONSE = {
+  status: 201,
+  description: "익명 임시 세션 발급 성공",
+  schema: {
+    example: ANONYMOUS_SUCCESS_RESPONSE,
+  },
+};

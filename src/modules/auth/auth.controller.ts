@@ -10,11 +10,11 @@ import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import {
   ANONYMOUS_API_DESCRIPTION,
-  ANONYMOUS_SUCCESS_RESPONSE,
+  ANONYMOUS_API_RESPONSE,
   LOGIN_API_DESCRIPTION,
-  LOGIN_SUCCESS_RESPONSE,
+  LOGIN_API_RESPONSE,
 } from "./auth.swagger";
-import { LoginDto } from "./dto/login.dto";
+import { LoginRequestDto } from "./dto/req/login.request.dto";
 
 @ApiTags("Auth")
 @Controller("api/auth")
@@ -27,20 +27,14 @@ export class AuthController {
     summary: "로그인",
     description: LOGIN_API_DESCRIPTION,
   })
-  @ApiBody({ type: LoginDto })
-  @ApiResponse({
-    status: 200,
-    description: "로그인 성공",
-    schema: {
-      example: LOGIN_SUCCESS_RESPONSE,
-    },
-  })
+  @ApiBody({ type: LoginRequestDto })
+  @ApiResponse(LOGIN_API_RESPONSE)
   @ApiResponse({
     status: 401,
     description: "이메일 또는 비밀번호 불일치",
   })
-  login(@Body() loginDto: LoginDto, @Req() req: Request) {
-    return this.authService.login(loginDto, req.url);
+  login(@Body() loginRequestDto: LoginRequestDto, @Req() req: Request) {
+    return this.authService.login(loginRequestDto, req.url);
   }
 
   @Post("anonymous")
@@ -50,13 +44,7 @@ export class AuthController {
     description: ANONYMOUS_API_DESCRIPTION,
   })
   @ApiCookieAuth("accessToken")
-  @ApiResponse({
-    status: 201,
-    description: "익명 임시 세션 발급 성공",
-    schema: {
-      example: ANONYMOUS_SUCCESS_RESPONSE,
-    },
-  })
+  @ApiResponse(ANONYMOUS_API_RESPONSE)
   async createAnonymousSession(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
