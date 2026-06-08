@@ -4,6 +4,7 @@ import * as bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { LoginRequestDto } from "./dto/req/login.request.dto";
+import { JwtPayload } from "./interfaces/jwt-payload.interface";
 
 @Injectable()
 export class AuthService {
@@ -40,6 +41,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       nickname: user.nickname,
+      isAnonymous: false,
     });
 
     return {
@@ -79,8 +81,9 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
+      email: null,
       nickname: user.nickname,
-      type: "anonymous",
+      isAnonymous: true,
     });
 
     return {
@@ -95,5 +98,9 @@ export class AuthService {
       },
       error: null,
     };
+  }
+
+  verifyAccessToken(token: string): JwtPayload {
+    return this.jwtService.verify<JwtPayload>(token);
   }
 }
