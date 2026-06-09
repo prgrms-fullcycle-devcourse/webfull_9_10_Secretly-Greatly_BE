@@ -32,6 +32,7 @@ export default tseslint.config(
       "prettier/prettier": ["error", {
         "endOfLine": "auto",
         "bracketSpacing": true,
+        "printWidth": 120,
       }],
     },
   },
