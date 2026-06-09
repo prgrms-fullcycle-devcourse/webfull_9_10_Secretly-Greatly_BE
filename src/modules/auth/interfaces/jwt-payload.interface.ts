@@ -3,4 +3,5 @@ export interface JwtPayload {
   email?: string | null;
   nickname: string;
   isAnonymous: boolean;
+  type?: "member" | "anonymous";
 }
