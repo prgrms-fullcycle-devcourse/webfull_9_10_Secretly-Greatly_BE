@@ -5,6 +5,7 @@ import { AppController } from "./app.controller";
 import { PrismaModule } from "./common/prisma/prisma.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { KisModule } from "./modules/kis/kis.module";
+import { ChatModule } from "./modules/chat/chat.module";
 import { StocksModule } from "./modules/stocks/stocks.module";
 import { CryptoModule } from "./common/crypto/crypto.module";
 
@@ -23,6 +24,7 @@ import { CryptoModule } from "./common/crypto/crypto.module";
     CryptoModule,
     KisModule,
     StocksModule,
+    ChatModule,
   ],
   providers: [],
   controllers: [AppController],

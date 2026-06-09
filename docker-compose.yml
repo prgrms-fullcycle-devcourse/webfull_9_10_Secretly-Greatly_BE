@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: "postgresql://postgres:1234@host.docker.internal:5432/secret_db"
+      - DATABASE_URL=postgresql://postgres:1234@host.docker.internal:5432/secret_db
     restart: unless-stopped
     depends_on:
       - redis
