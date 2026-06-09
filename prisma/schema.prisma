@@ -100,6 +100,10 @@ model User {
   nickname  String   @unique
   password  String?
 
+  kisAppKeyEnc              String?   @map("kis_app_key_enc")
+  kisAppSecretEnc           String?   @map("kis_app_secret_enc")
+  kisCredentialRegisteredAt DateTime? @map("kis_credential_registered_at")
+  
   anonymousSessions AnonymousSession[]
   setting           UserSetting?
   watchlists        Watchlist[]

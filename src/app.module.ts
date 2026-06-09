@@ -4,7 +4,9 @@ import { RedisModule } from "@nestjs-modules/ioredis";
 import { AppController } from "./app.controller";
 import { PrismaModule } from "./common/prisma/prisma.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { KisModule } from "./modules/kis/kis.module";
 import { StocksModule } from "./modules/stocks/stocks.module";
+import { CryptoModule } from "./common/crypto/crypto.module";
 
 @Module({
   imports: [
