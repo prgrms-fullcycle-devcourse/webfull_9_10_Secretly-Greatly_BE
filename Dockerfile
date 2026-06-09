@@ -6,7 +6,10 @@ RUN corepack enable
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install --frozen-lockfile
+ENV PNPM_SKIP_PREPARE=1
+
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY . .
 

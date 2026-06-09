@@ -5,7 +5,33 @@ services:
       dockerfile: Dockerfile
     container_name: secretly-greatly-backend
     ports:
-      - "3000:3000"
+      - "3001:3001"
     env_file:
       - .env
+    depends_on:
+      - database
+    networks:
+      - app-network
     restart: unless-stopped
+
+  database:
+    image: postgres:15-alpine
+    container_name: secretly-greatly-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: secret_db
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-data:
