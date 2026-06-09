@@ -14,5 +14,6 @@
     "incremental": false,
     "strict": false,
     "skipLibCheck": true
-  }
+  },
+  "exclude": ["node_modules", "dist", "prisma/**/*"]
 }
