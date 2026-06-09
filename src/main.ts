@@ -9,6 +9,18 @@ import { ResponseInterceptor } from "./common/interceptors/response.interceptor"
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const frontendUrl = process.env.FRONTEND_URL;
+  const origins = frontendUrl
+    ? frontendUrl
+        .replace(/['"]/g, "")
+        .split(",")
+        .map((url) => url.trim())
+    : [];
+
+  app.enableCors({
+    origin: origins,
+    credentials: true,
+  });
   app.use(cookieParser());
 
   app.useGlobalPipes(
