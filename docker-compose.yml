@@ -8,4 +8,21 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: "postgresql://postgres:1234@host.docker.internal:5432/secret_db"
     restart: unless-stopped
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7
+    container_name: secretly-greatly-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes   # 디스크 영속화(재시작해도 캐시 유지)
+
+volumes:
+  redis-data:

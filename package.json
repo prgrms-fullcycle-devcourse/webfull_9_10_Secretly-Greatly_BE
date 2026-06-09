@@ -13,10 +13,13 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "fix": "eslint . --fix && prettier --write \"src/**/*.ts\"",
-    "prepare": "husky && git config --local commit.template .gitmessage"
+    "prepare": "(husky && git config --local commit.template .gitmessage) || true"
   },
   "dependencies": {
+    "@nestjs-modules/ioredis": "^2.2.1",
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.0",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.0",
@@ -25,6 +28,7 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "ioredis": "^5.11.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
