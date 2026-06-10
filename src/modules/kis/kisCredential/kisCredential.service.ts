@@ -1,13 +1,22 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import {
+  Logger,
+  ConflictException,
+  Injectable,
+  UnprocessableEntityException,
+} from "@nestjs/common";
 import { PrismaService } from "../../../common/prisma/prisma.service";
 import { CryptoService } from "../../../common/crypto/crypto.service";
 import { KisCredentialStatusDto } from "./dto/kisCredentialStatus.dto";
+import { KisAuthService } from "../kisAuth/kisAuth.service";
 
 @Injectable()
 export class KisCredentialService {
+  private readonly logger = new Logger(KisCredentialService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly crypto: CryptoService,
+    private readonly kisAuthService: KisAuthService,
   ) {}
 
   /** 유저의 KIS 키 등록 상태 조회 */
@@ -53,6 +62,27 @@ export class KisCredentialService {
         kisCredentialRegisteredAt: new Date(),
       },
     });
+    // 2) 저장한 키로 토큰 발급을 시도 → 유효성 검증 + 캐싱
+    try {
+      await this.kisAuthService.getAccessToken(userId); // ← 여기서 토큰 발급/캐싱
+    } catch (e) {
+      this.logger.warn(
+        `KIS 키 검증 실패 (user=${userId}): ${(e as Error).message}`,
+      );
+
+      // 토큰 발급 실패 = 키가 유효하지 않음. 저장한 키를 롤백.
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          kisAppKeyEnc: null,
+          kisAppSecretEnc: null,
+          kisCredentialRegisteredAt: null,
+        },
+      });
+      throw new UnprocessableEntityException(
+        "유효하지 않은 KIS API 키입니다. 한투에서 발급받은 키를 확인해주세요.",
+      );
+    }
 
     return {
       registered: true,
