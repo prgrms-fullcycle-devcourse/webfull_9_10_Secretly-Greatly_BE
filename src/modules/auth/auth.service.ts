@@ -5,6 +5,11 @@ import { randomUUID } from "crypto";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { LoginRequestDto } from "./dto/req/login.request.dto";
 import { JwtPayload } from "./interfaces/jwt-payload.interface";
+import { SignupRequestDto } from "./dto/req/signup.request.dto";
+import { SignUpResponseDto } from "./dto/res/signup.response.dto";
+import { DuplicateEmailException } from "../../common/exceptions/duplicate-email.exception";
+import { DuplicateNicknameException } from "../../common/exceptions/duplicate-nickname.exception";
+import { AnonymousServiceResultDto } from "./dto/res/anonymous-serivce-result.dto";
 
 @Injectable()
 export class AuthService {
@@ -13,7 +18,54 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(loginRequestDto: LoginRequestDto, path: string) {
+  async signup(body: SignupRequestDto): Promise<SignUpResponseDto> {
+    // 1. 이메일 중복 체크
+    const existingEmail = await this.prisma.user.findUnique({
+      where: { email: body.email },
+    });
+    if (existingEmail) {
+      throw new DuplicateEmailException();
+    }
+
+    // 2. 닉네임 중복 체크
+    const existingNickname = await this.prisma.user.findUnique({
+      where: { nickname: body.fixedNickname },
+    });
+    if (existingNickname) {
+      throw new DuplicateNicknameException();
+    }
+
+    // 3. Bcrypt 해싱
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(body.password, saltRounds);
+
+    // 4. DB 등록
+    const newUser = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: body.email,
+          nickname: body.fixedNickname,
+          password: hashedPassword,
+        },
+      });
+
+      await tx.userSetting.create({
+        data: {
+          userId: user.id,
+        },
+      });
+
+      return user;
+    });
+
+    // 5. 객체 반환
+    return {
+      userId: newUser.id,
+    };
+  }
+
+  // 로그인
+  async login(loginRequestDto: LoginRequestDto) {
     const user = await this.prisma.user.findUnique({
       where: {
         email: loginRequestDto.email,
@@ -45,25 +97,20 @@ export class AuthService {
     });
 
     return {
-      statusCode: 200,
-      timestamp: new Date().toISOString(),
-      path,
-      message: "로그인에 성공했습니다. 에디터 세션이 동기화됩니다.",
-      data: {
-        userId: user.id,
-        fixedNickname: user.nickname,
-        accessToken,
-      },
-      error: null,
+      userId: user.id,
+      fixedNickname: user.nickname,
+      accessToken,
     };
   }
 
-  async createAnonymousSession(path: string) {
+  // 익명 임시 세션 발급
+  async createAnonymousSession(): Promise<AnonymousServiceResultDto> {
     const anonymousToken = randomUUID();
 
     const expiredAt = new Date();
     expiredAt.setDate(expiredAt.getDate() + 7);
 
+    // 1. Prisma를 활용해 익명 유저 레코드, 세팅, 익명 세션 히스토리를 동시에 생성
     const user = await this.prisma.user.create({
       data: {
         nickname: `anonymous_${anonymousToken.slice(0, 8)}`,
@@ -79,6 +126,7 @@ export class AuthService {
       },
     });
 
+    // 2. 익명 접속 유저 식별용 임시 JWT 페이로드
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       email: null,
@@ -86,17 +134,11 @@ export class AuthService {
       isAnonymous: true,
     });
 
+    // 3. DTO 반환
     return {
-      statusCode: 201,
-      timestamp: new Date().toISOString(),
-      path,
-      message: "익명 임시 세션 발급이 완료되었습니다.",
-      data: {
-        userId: user.id,
-        anonymousToken,
-        accessToken,
-      },
-      error: null,
+      userId: user.id,
+      anonymousToken,
+      accessToken,
     };
   }
 
