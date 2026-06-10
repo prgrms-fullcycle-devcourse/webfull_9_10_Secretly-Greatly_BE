@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 
-export class KisCredentialStatusReponseDto {
+export class KisCredentialStatusResponseDto {
   @ApiProperty({
     description: "KIS key 등록 여부",
     example: "true",

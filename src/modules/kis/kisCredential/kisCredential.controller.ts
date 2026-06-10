@@ -21,7 +21,7 @@ import {
   KIS_REGISTER_INTERNAL_SERVER_ERROR_API_RESPONSE,
   KIS_REGISTER_API_DESCRIPTION,
 } from "./swagger/kisCredentialRegister.swagger";
-import { ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import {
   KIS_STATUS_API_DESCRIPTION,
   KIS_STATUS_SUCCESS_API_RESPONSE,
@@ -29,6 +29,7 @@ import {
   KIS_STATUS_INTERNAL_SERVER_ERROR_API_RESPONSE,
 } from "./swagger/kisCredentialStatus.swagger";
 
+@ApiTags("KIS Credential")
 @Controller("api/auth/kis-credential")
 @UseGuards(JwtAuthGuard)
 export class KisCredentialController {
@@ -53,12 +54,14 @@ export class KisCredentialController {
       user: JwtPayload;
     },
     @Body() dto: RegisterKisCredentialRequestDto,
+    // TODO: Promise<CustomResponse> 추가 예정
   ) {
     const userId = req.user.sub;
     const data = await this.kisCredentialService.register(userId, {
       appKey: dto.appKey,
       appSecret: dto.appSecret,
     });
+    // TODO: return CustomResponse.success(data, "KIS API 키가 성공적으로 등록되었습니다.");
     return {
       message: "KIS API 키가 등록되었습니다.",
       data,
@@ -75,7 +78,7 @@ export class KisCredentialController {
   @ApiResponse(KIS_STATUS_SUCCESS_API_RESPONSE)
   @ApiResponse(KIS_STATUS_UNAUTHORIZED_API_RESPONSE)
   @ApiResponse(KIS_STATUS_INTERNAL_SERVER_ERROR_API_RESPONSE)
-  @UseGuards(JwtAuthGuard)
+  // TODO: async getStatus(@Req() req: { user: JwtPayload },): Promise<CustomResponse> {
   async getStatus(
     @Req()
     req: {
@@ -84,6 +87,7 @@ export class KisCredentialController {
   ) {
     const userId = req.user.sub;
     const data = await this.kisCredentialService.getStatus(userId);
+    // TODO: return CustomResponse.success(data, "KIS API 키 등록 상태 조회가 완료되었습니다.");
     return {
       message: "KIS API 키 등록 상태 조회 성공",
       data,

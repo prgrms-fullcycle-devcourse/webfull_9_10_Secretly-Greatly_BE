@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../../../common/prisma/prisma.service";
 import { CryptoService } from "../../../common/crypto/crypto.service";
-import { KisCredentialStatusReponseDto } from "./dto/res/kisCredentialStatus.response.dto";
+import { KisCredentialStatusResponseDto } from "./dto/res/kisCredentialStatus.response.dto";
 import { KisAuthService } from "../kisAuth/kisAuth.service";
 
 @Injectable()
@@ -20,7 +20,7 @@ export class KisCredentialService {
   ) {}
 
   /** 유저의 KIS 키 등록 상태 조회 */
-  async getStatus(userId: string): Promise<KisCredentialStatusReponseDto> {
+  async getStatus(userId: string): Promise<KisCredentialStatusResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -50,11 +50,12 @@ export class KisCredentialService {
       select: { kisAppKeyEnc: true },
     });
     if (existing?.kisAppKeyEnc) {
+      // TODO: Custom에러
       throw new ConflictException("이미 등록된 KIS API 키가 있습니다.");
     }
 
     // 암호화 및 저장
-    await this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {
         kisAppKeyEnc: this.crypto.encrypt(cred.appKey),
@@ -87,7 +88,9 @@ export class KisCredentialService {
     return {
       registered: true,
       maskedAppKey: this.mask(cred.appKey),
-      registeredAt: new Date().toISOString(),
+      registeredAt:
+        updatedUser.kisCredentialRegisteredAt?.toISOString() ??
+        new Date().toISOString(),
     };
   }
 
