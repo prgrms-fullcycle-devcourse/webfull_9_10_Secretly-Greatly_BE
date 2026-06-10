@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../../../common/prisma/prisma.service";
 import { CryptoService } from "../../../common/crypto/crypto.service";
-import { KisCredentialStatusDto } from "./dto/kisCredentialStatus.dto";
+import { KisCredentialStatusReponseDto } from "./dto/res/kisCredentialStatus.response.dto";
 import { KisAuthService } from "../kisAuth/kisAuth.service";
 
 @Injectable()
@@ -20,7 +20,7 @@ export class KisCredentialService {
   ) {}
 
   /** 유저의 KIS 키 등록 상태 조회 */
-  async getStatus(userId: string): Promise<KisCredentialStatusDto> {
+  async getStatus(userId: string): Promise<KisCredentialStatusReponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
