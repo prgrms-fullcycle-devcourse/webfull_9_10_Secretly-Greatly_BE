@@ -13,8 +13,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "fix": "eslint . --fix && prettier --write \"src/**/*.ts\"",
-    "prepare": "husky && git config --local commit.template .gitmessage"
-  },
+    "prepare": "(husky && git config --local commit.template .gitmessage) || true"  },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
