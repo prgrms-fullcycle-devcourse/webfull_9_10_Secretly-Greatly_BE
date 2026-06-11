@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { MessageType } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
@@ -143,6 +143,70 @@ export class ChatService {
         isHidden: message.isHidden,
         createdAt: message.createdAt,
       })),
+    };
+  }
+  async reportChat(chatId: number, userId: string) {
+    const message = await this.prisma.chatMessage.findUnique({
+      where: {
+        id: chatId,
+      },
+    });
+
+    if (!message) {
+      throw new NotFoundException("존재하지 않는 채팅 메시지입니다.");
+    }
+
+    const alreadyReported = await this.prisma.chatReport.findUnique({
+      where: {
+        chatMessageId_userId: {
+          chatMessageId: chatId,
+          userId,
+        },
+      },
+    });
+
+    if (alreadyReported) {
+      throw new ConflictException("이미 신고한 메시지입니다.");
+    }
+
+    const updatedMessage = await this.prisma.$transaction(async (tx) => {
+      await tx.chatReport.create({
+        data: {
+          chatMessageId: chatId,
+          userId,
+        },
+      });
+
+      const reportedMessage = await tx.chatMessage.update({
+        where: {
+          id: chatId,
+        },
+        data: {
+          reportCount: {
+            increment: 1,
+          },
+        },
+      });
+
+      if (reportedMessage.reportCount >= 5 && !reportedMessage.isHidden) {
+        return tx.chatMessage.update({
+          where: {
+            id: chatId,
+          },
+          data: {
+            isHidden: true,
+          },
+        });
+      }
+
+      return reportedMessage;
+    });
+
+    return {
+      message: "해당 메시지에 대한 신고가 접수되었습니다.",
+      chatId: updatedMessage.id,
+      currentReportCount: updatedMessage.reportCount,
+      isBlinded: updatedMessage.isHidden,
     };
   }
 }
