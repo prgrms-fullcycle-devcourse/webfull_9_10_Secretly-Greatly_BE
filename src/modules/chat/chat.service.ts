@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { MessageType } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
@@ -17,9 +13,7 @@ export class ChatService {
   private validateMessageContent(message: string) {
     const normalizedContent = message.toLowerCase().replace(/\s/g, "");
 
-    const hasBannedWord = this.bannedWords.some((word) =>
-      normalizedContent.includes(word),
-    );
+    const hasBannedWord = this.bannedWords.some((word) => normalizedContent.includes(word));
 
     if (hasBannedWord) {
       throw new BadRequestException("금칙어가 포함된 메시지입니다.");
@@ -71,6 +65,84 @@ export class ChatService {
       messageType: chatMessage.messageType,
       formattedLog: `[${stock.code}] ${user.nickname}: ${chatMessage.message}`,
       createdAt: chatMessage.createdAt,
+    };
+  }
+
+  async getMessagesByTicker(ticker: string, page: number, limit: number) {
+    const stock = await this.prisma.stock.findFirst({
+      where: {
+        code: ticker,
+      },
+    });
+
+    if (!stock) {
+      throw new NotFoundException("존재하지 않는 종목입니다.");
+    }
+
+    const room = await this.prisma.chatRoom.findUnique({
+      where: {
+        stockId: stock.id,
+      },
+    });
+
+    if (!room) {
+      return {
+        stockId: stock.id,
+        ticker: stock.code,
+        stockName: stock.name,
+        page,
+        limit,
+        total: 0,
+        messages: [],
+      };
+    }
+
+    const [messages, total] = await this.prisma.$transaction([
+      this.prisma.chatMessage.findMany({
+        where: {
+          roomId: room.id,
+          isHidden: false,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              nickname: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.chatMessage.count({
+        where: {
+          roomId: room.id,
+          isHidden: false,
+        },
+      }),
+    ]);
+
+    return {
+      stockId: stock.id,
+      ticker: stock.code,
+      stockName: stock.name,
+      page,
+      limit,
+      total,
+      messages: messages.map((message) => ({
+        chatId: message.id,
+        roomId: message.roomId,
+        senderId: message.userId,
+        nickname: message.user?.nickname ?? "알 수 없음",
+        message: message.message,
+        messageType: message.messageType,
+        reportCount: message.reportCount,
+        isHidden: message.isHidden,
+        createdAt: message.createdAt,
+      })),
     };
   }
 }

@@ -53,10 +53,7 @@ export class ChatGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage("join_room")
-  handleJoinRoom(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() body: JoinRoomRequestDto,
-  ) {
+  handleJoinRoom(@ConnectedSocket() client: Socket, @MessageBody() body: JoinRoomRequestDto) {
     const roomName = `stock:${body.ticker}`;
 
     void client.join(roomName);
@@ -69,10 +66,7 @@ export class ChatGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage("send_message")
-  async handleSendMessage(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() body: SendMessageRequestDto,
-  ) {
+  async handleSendMessage(@ConnectedSocket() client: Socket, @MessageBody() body: SendMessageRequestDto) {
     try {
       const user = client.data.user as JwtPayload;
 
@@ -96,10 +90,7 @@ export class ChatGateway implements OnGatewayConnection {
       return message;
     } catch (error) {
       client.emit("chat_error", {
-        message:
-          error instanceof Error
-            ? error.message
-            : "메시지 전송에 실패했습니다.",
+        message: error instanceof Error ? error.message : "메시지 전송에 실패했습니다.",
       });
     }
   }

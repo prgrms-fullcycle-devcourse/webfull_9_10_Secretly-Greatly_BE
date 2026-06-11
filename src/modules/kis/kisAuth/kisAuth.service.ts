@@ -7,11 +7,7 @@ import { firstValueFrom } from "rxjs";
 import { PrismaService } from "../../../common/prisma/prisma.service";
 import { CryptoService } from "../../../common/crypto/crypto.service";
 import { KisTokenResponseDto } from "./dto/kisTokenResponse.dto";
-import {
-  KIS_OAUTH,
-  kisTokenKey,
-  TOKEN_EXPIRE_MARGIN_SEC,
-} from "./kisAuth.constant";
+import { KIS_OAUTH, kisTokenKey, TOKEN_EXPIRE_MARGIN_SEC } from "./kisAuth.constant";
 
 @Injectable()
 export class KisAuthService {

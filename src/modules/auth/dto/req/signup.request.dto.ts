@@ -1,11 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  Length,
-  Matches,
-} from "class-validator";
+import { IsEmail, IsNotEmpty, IsString, Length, Matches } from "class-validator";
 
 export class SignupRequestDto {
   @ApiProperty({
@@ -23,13 +17,11 @@ export class SignupRequestDto {
 
   @ApiProperty({
     example: "gitstock101@",
-    description:
-      "비밀번호 (8자~16자, 영문/숫자/특수문자 필수 혼합, DDoS 방어용 상한선 적용)",
+    description: "비밀번호 (8자~16자, 영문/숫자/특수문자 필수 혼합, DDoS 방어용 상한선 적용)",
   })
   @IsString()
   @Length(8, 16, {
-    message:
-      "비밀번호는 8자 이상 16자 이하의 영문, 숫자, 특수문자를 포함해야 합니다.",
+    message: "비밀번호는 8자 이상 16자 이하의 영문, 숫자, 특수문자를 포함해야 합니다.",
   })
   @Matches(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,16}$/, {
     message: "비밀번호는 영문, 숫자, 특수문자를 최소 1개씩 포함해야 합니다.",

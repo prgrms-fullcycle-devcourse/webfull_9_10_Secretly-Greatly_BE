@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
@@ -77,20 +73,13 @@ export class AuthService {
     });
 
     if (!user || !user.password) {
-      throw new UnauthorizedException(
-        "이메일 또는 비밀번호가 일치하지 않습니다.",
-      );
+      throw new UnauthorizedException("이메일 또는 비밀번호가 일치하지 않습니다.");
     }
 
-    const isPasswordMatched = await bcrypt.compare(
-      loginRequestDto.password,
-      user.password,
-    );
+    const isPasswordMatched = await bcrypt.compare(loginRequestDto.password, user.password);
 
     if (!isPasswordMatched) {
-      throw new UnauthorizedException(
-        "이메일 또는 비밀번호가 일치하지 않습니다.",
-      );
+      throw new UnauthorizedException("이메일 또는 비밀번호가 일치하지 않습니다.");
     }
 
     const accessToken = await this.jwtService.signAsync({

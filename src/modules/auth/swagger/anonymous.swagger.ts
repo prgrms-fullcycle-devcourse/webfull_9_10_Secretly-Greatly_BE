@@ -1,5 +1,4 @@
-export const ANONYMOUS_API_DESCRIPTION =
-  "비회원 사용자가 별도 회원가입 없이 임시 세션을 발급받기 위해 호출합니다.";
+export const ANONYMOUS_API_DESCRIPTION = "비회원 사용자가 별도 회원가입 없이 임시 세션을 발급받기 위해 호출합니다.";
 
 export const ANONYMOUS_SUCCESS_RESPONSE = {
   statusCode: 201,
