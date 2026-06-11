@@ -5,33 +5,22 @@ services:
       dockerfile: Dockerfile
     container_name: secretly-greatly-backend
     ports:
-      - "3001:3001"
+      - "3000:3000"
     env_file:
       - .env
     depends_on:
-      - database
-    networks:
-      - app-network
+      - redis
     restart: unless-stopped
 
-  database:
-    image: postgres:15-alpine
-    container_name: secretly-greatly-db
+  redis:
+    image: redis:7
+    container_name: secretly-greatly-redis
     ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: secret_db
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    networks:
-      - app-network
+      - "6379:6379"    
     restart: unless-stopped
-
-networks:
-  app-network:
-    driver: bridge
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes   # 디스크 영속화(재시작해도 캐시 유지)
 
 volumes:
-  db-data:
+  redis-data:
