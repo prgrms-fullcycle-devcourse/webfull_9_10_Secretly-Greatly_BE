@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
@@ -142,6 +146,38 @@ export class AuthService {
     };
   }
 
+  async getMe(user: JwtPayload, path: string) {
+    const foundUser = await this.prisma.user.findUnique({
+      where: {
+        id: user.sub,
+      },
+      select: {
+        id: true,
+        email: true,
+        nickname: true,
+        createdAt: true,
+      },
+    });
+
+    if (!foundUser) {
+      throw new NotFoundException("사용자를 찾을 수 없습니다.");
+    }
+
+    return {
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+      path,
+      message: "현재 로그인 사용자 조회에 성공했습니다.",
+      data: {
+        userId: foundUser.id,
+        email: foundUser.email,
+        nickname: foundUser.nickname,
+        isAnonymous: user.isAnonymous,
+        createdAt: foundUser.createdAt,
+      },
+      error: null,
+    };
+  }
   verifyAccessToken(token: string): JwtPayload {
     return this.jwtService.verify<JwtPayload>(token);
   }

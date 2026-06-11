@@ -1,5 +1,15 @@
-import { Body, Controller, HttpCode, Post, Req, Res } from "@nestjs/common";
 import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from "@nestjs/common";
+import {
+  ApiBearerAuth,
   ApiBody,
   ApiCookieAuth,
   ApiOperation,
@@ -8,6 +18,17 @@ import {
 } from "@nestjs/swagger";
 import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
+import { LoginRequestDto } from "./dto/req/login.request.dto";
+import { JwtAuthGuard } from "./guards/jwt-auth.guard";
+import { JwtPayload } from "./interfaces/jwt-payload.interface";
+
+import {
+  ME_API_DESCRIPTION,
+  ME_API_RESPONSE,
+  ME_NOT_FOUND_API_RESPONSE,
+  ME_UNAUTHORIZED_API_RESPONSE,
+} from "./swagger/me.swagger";
+
 import {
   LOGIN_API_DESCRIPTION,
   LOGIN_API_RESPONSE,
