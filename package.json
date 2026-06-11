@@ -12,7 +12,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
-    "fix": "eslint . --fix && prettier --write \"src/**/*.ts\"",
+    "fix": "prettier --write \"src/**/*.ts\" && eslint . --fix ",
     "prepare": "(husky && git config --local commit.template .gitmessage) || true"
   },
   "dependencies": {
