@@ -17,49 +17,66 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { Request, Response } from "express";
+import { PasswordMismatchException } from "../../common/exceptions/password-mismatch.exception";
+import { CustomResponse } from "../../common/responses/custom.response";
 import { AuthService } from "./auth.service";
 import { LoginRequestDto } from "./dto/req/login.request.dto";
+import { SignupRequestDto } from "./dto/req/signup.request.dto";
+import { AnonymousResponseDto } from "./dto/res/anonymous-response.dto";
+import { LoginResponseDto } from "./dto/res/login.response.dto";
+import { SignUpResponseDto } from "./dto/res/signup.response.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { JwtPayload } from "./interfaces/jwt-payload.interface";
-
 import {
-  ME_API_DESCRIPTION,
-  ME_API_RESPONSE,
-  ME_NOT_FOUND_API_RESPONSE,
-  ME_UNAUTHORIZED_API_RESPONSE,
-} from "./swagger/me.swagger";
-
+  ANONYMOUS_API_DESCRIPTION,
+  ANONYMOUS_API_RESPONSE,
+  ANONYMOUS_INTERNAL_SERVER_ERROR_API_RESPONSE,
+} from "./swagger/anonymous.swagger";
 import {
   LOGIN_API_DESCRIPTION,
   LOGIN_API_RESPONSE,
   LOGIN_INTERNAL_SERVER_ERROR_API_RESPONSE,
   LOGIN_UNAUTHORIZED_API_RESPONSE,
 } from "./swagger/login.swagger";
-
 import {
-  ANONYMOUS_API_DESCRIPTION,
-  ANONYMOUS_API_RESPONSE,
-  ANONYMOUS_INTERNAL_SERVER_ERROR_API_RESPONSE,
-} from "./swagger/anonymous.swagger";
+  ME_API_DESCRIPTION,
+  ME_API_RESPONSE,
+  ME_NOT_FOUND_API_RESPONSE,
+  ME_UNAUTHORIZED_API_RESPONSE,
+} from "./swagger/me.swagger";
+import {
+  SIGNUP_API_RESPONSE,
+  SIGNUP_DUPLICATE_EMAIL_API_RESPONSE,
+  SIGNUP_MISMATCH_API_RESPONSE,
+  SIGNUP_VALIDATION_API_RESPONSE,
+} from "./swagger/signup.swagger";
+
+type AuthenticatedRequest = Request & {
+  user: JwtPayload;
+};
 
 @ApiTags("Auth")
 @Controller("api/auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Get("me")
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary: "현재 로그인 사용자 조회",
-    description: ME_API_DESCRIPTION,
-  })
-  @ApiBearerAuth()
-  @ApiCookieAuth("accessToken")
-  @ApiResponse(ME_API_RESPONSE)
-  @ApiResponse(ME_UNAUTHORIZED_API_RESPONSE)
-  @ApiResponse(ME_NOT_FOUND_API_RESPONSE)
-  async getMe(@Req() req: Request) {
-    return this.authService.getMe(req.user as JwtPayload, req.url);
+  @Post()
+  @ApiOperation({ summary: "회원가입", description: "유저 등록" })
+  @ApiBody({ type: SignupRequestDto })
+  @ApiResponse(SIGNUP_API_RESPONSE)
+  @ApiResponse(SIGNUP_VALIDATION_API_RESPONSE)
+  @ApiResponse(SIGNUP_MISMATCH_API_RESPONSE)
+  @ApiResponse(SIGNUP_DUPLICATE_EMAIL_API_RESPONSE)
+  async signUp(
+    @Body() body: SignupRequestDto,
+  ): Promise<CustomResponse<SignUpResponseDto>> {
+    if (body.password !== body.checkPassword) {
+      throw new PasswordMismatchException();
+    }
+
+    const signUpResult = await this.authService.signup(body);
+
+    return CustomResponse.success(signUpResult, "회원가입이 완료되었습니다.");
   }
 
   @Post("login")
@@ -72,8 +89,12 @@ export class AuthController {
   @ApiResponse(LOGIN_API_RESPONSE)
   @ApiResponse(LOGIN_UNAUTHORIZED_API_RESPONSE)
   @ApiResponse(LOGIN_INTERNAL_SERVER_ERROR_API_RESPONSE)
-  login(@Body() loginRequestDto: LoginRequestDto, @Req() req: Request) {
-    return this.authService.login(loginRequestDto, req.url);
+  async login(
+    @Body() loginRequestDto: LoginRequestDto,
+  ): Promise<CustomResponse<LoginResponseDto>> {
+    const loginResult = await this.authService.login(loginRequestDto);
+
+    return CustomResponse.success(loginResult, "로그인에 성공했습니다.");
   }
 
   @Post("anonymous")
@@ -86,24 +107,36 @@ export class AuthController {
   @ApiResponse(ANONYMOUS_API_RESPONSE)
   @ApiResponse(ANONYMOUS_INTERNAL_SERVER_ERROR_API_RESPONSE)
   async createAnonymousSession(
-    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ) {
-    const result = await this.authService.createAnonymousSession(req.url);
+  ): Promise<CustomResponse<AnonymousResponseDto>> {
+    const { accessToken, ...responseData } =
+      await this.authService.createAnonymousSession();
 
-    res.cookie("accessToken", result.data.accessToken, {
+    res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
-    return {
-      ...result,
-      data: {
-        userId: result.data.userId,
-        anonymousToken: result.data.anonymousToken,
-      },
-    };
+    return CustomResponse.success(
+      responseData,
+      "익명 임시 세션 발급이 완료되었습니다.",
+    );
+  }
+
+  @Get("me")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: "현재 로그인 사용자 조회",
+    description: ME_API_DESCRIPTION,
+  })
+  @ApiBearerAuth()
+  @ApiCookieAuth("accessToken")
+  @ApiResponse(ME_API_RESPONSE)
+  @ApiResponse(ME_UNAUTHORIZED_API_RESPONSE)
+  @ApiResponse(ME_NOT_FOUND_API_RESPONSE)
+  async getMe(@Req() req: AuthenticatedRequest) {
+    return this.authService.getMe(req.user, req.url);
   }
 }
