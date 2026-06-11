@@ -29,17 +29,10 @@ export class CryptoService {
     const iv = randomBytes(12); // GCM 권장 IV 길이 12바이트, 매번 새로 발급
     const cipher = createCipheriv(this.algorithm, this.key, iv);
 
-    const encrypted = Buffer.concat([
-      cipher.update(plain, "utf8"),
-      cipher.final(),
-    ]);
+    const encrypted = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
     const authTag = cipher.getAuthTag();
 
-    return [
-      iv.toString("hex"),
-      authTag.toString("hex"),
-      encrypted.toString("hex"),
-    ].join(":");
+    return [iv.toString("hex"), authTag.toString("hex"), encrypted.toString("hex")].join(":");
   }
 
   /**
@@ -52,11 +45,7 @@ export class CryptoService {
       throw new Error("복호화 대상 형식이 올바르지 않습니다.");
     }
 
-    const decipher = createDecipheriv(
-      this.algorithm,
-      this.key,
-      Buffer.from(ivHex, "hex"),
-    );
+    const decipher = createDecipheriv(this.algorithm, this.key, Buffer.from(ivHex, "hex"));
     decipher.setAuthTag(Buffer.from(tagHex, "hex"));
 
     const decrypted = Buffer.concat([

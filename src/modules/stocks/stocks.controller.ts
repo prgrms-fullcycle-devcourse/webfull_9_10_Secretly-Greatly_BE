@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Header,
-  HttpCode,
-  HttpStatus,
-  Query,
-} from "@nestjs/common";
+import { Controller, Get, Header, HttpCode, HttpStatus, Query } from "@nestjs/common";
 import { StockItemFetchAll } from "./stocks.service";
 import { GetStocksQueryDto } from "./dto/getStocksQuery.dto";
 

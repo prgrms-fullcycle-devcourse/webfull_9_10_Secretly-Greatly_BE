@@ -59,10 +59,7 @@ export class StockItemFetchAll {
     const kw = keyword?.trim();
     if (!kw) return {};
     return {
-      OR: [
-        { name: { contains: kw, mode: "insensitive" } },
-        { code: { contains: kw, mode: "insensitive" } },
-      ],
+      OR: [{ name: { contains: kw, mode: "insensitive" } }, { code: { contains: kw, mode: "insensitive" } }],
     };
   }
 }

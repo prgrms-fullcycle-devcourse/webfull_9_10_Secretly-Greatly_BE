@@ -19,8 +19,7 @@ export class GetStocksQueryDto {
 
   @IsOptional()
   @IsIn(["DOMESTIC", "OVERSEAS", "COIN"], {
-    message:
-      "market 파라미터는 'DOMESTIC', 'OVERSEAS', 'COIN' 중 하나여야 합니다.",
+    message: "market 파라미터는 'DOMESTIC', 'OVERSEAS', 'COIN' 중 하나여야 합니다.",
   })
   market?: MarketFilter;
 
