@@ -145,6 +145,7 @@ export class ChatService {
       })),
     };
   }
+
   async reportChat(chatId: number, userId: string) {
     const message = await this.prisma.chatMessage.findUnique({
       where: {
