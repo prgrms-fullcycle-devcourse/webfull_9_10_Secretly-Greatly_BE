@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Socket.IO Test</title>
+  </head>
+  <body>
+    <h1>Socket.IO Test</h1>
+
+    <input id="token" placeholder="accessToken 입력" style="width: 600px" />
+    <button onclick="connectSocket()">Connect</button>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    
+    <script>
+        let socket;
+
+        function connectSocket() {
+            const token = document
+            .getElementById("token")
+            .value
+            .trim()
+            .replace(/^Bearer\s+/i, "")
+            .replace(/;$/, "");
+
+            console.log("input token:", token);
+
+            socket = io("http://localhost:3001", {
+            transports: ["websocket"],
+            auth: { token },
+            });
+
+            socket.on("connect", () => {
+            console.log("connected:", socket.id);
+            });
+
+            socket.on("joined_room", (data) => {
+            console.log("joined_room:", data);
+            });
+
+            socket.on("receive_message", (message) => {
+            console.log("receive_message:", message);
+            });
+
+            socket.on("chat_error", (error) => {
+            console.error("chat_error:", error.message);
+            });
+        }
+
+        function joinRoom() {
+            if (!socket || !socket.connected) {
+                console.error("socket is not connected");
+                return;
+            }
+
+            socket.emit("join_room", {
+                ticker: "NVDA",
+            });
+
+            console.log("join_room emitted");
+            }
+
+        function sendMessage() {
+            if (!socket || !socket.connected) {
+            console.error("socket is not connected");
+            return;
+            }
+
+            socket.emit("send_message", {
+            ticker: "NVDA",
+            message: "안녕하세요",
+            });
+            console.log("send_message emitted");
+        }
+    </script>
+
+    <button onclick="joinRoom()">채팅방 입장</button>
+    <button onclick="sendMessage()">메시지 보내기</button>
+  </body>
+</html>

@@ -100,6 +100,10 @@ model User {
   nickname  String   @unique
   password  String?
 
+  kisAppKeyEnc              String?   @map("kis_app_key_enc")
+  kisAppSecretEnc           String?   @map("kis_app_secret_enc")
+  kisCredentialRegisteredAt DateTime? @map("kis_credential_registered_at")
+
   anonymousSessions AnonymousSession[]
   setting           UserSetting?
   watchlists        Watchlist[]
@@ -107,6 +111,9 @@ model User {
   chatMessages      ChatMessage[]
   chatReports       ChatReport[]
   alertLogs         AlertLog[]
+  ticks             Tick[]
+  minuteBars        MinuteBar[]
+  dailyBars         DailyBar[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -154,11 +161,13 @@ model Stock {
   assetType AssetType @map("asset_type")
 
   watchlists      Watchlist[]
-  snapshots       MarketSnapshot[]
   chatRoom        ChatRoom?
   news            News[]
   alertLogs       AlertLog[]
   positions       Position[]
+  ticks           Tick[]
+  minuteBars      MinuteBar[]
+  dailyBars       DailyBar[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -186,21 +195,55 @@ model Watchlist {
   @@map("watchlists")
 }
 
-model MarketSnapshot {
-  id           Int      @id @default(autoincrement())
-  stockId      Int      @map("stock_id")
-  currentPrice Decimal  @map("current_price") @db.Decimal(18, 4)
-  changeRate   Decimal  @map("change_rate") @db.Decimal(8, 4)
-  prevClose    Decimal? @map("prev_close") @db.Decimal(18, 4)
-  dayHigh      Decimal? @map("day_high") @db.Decimal(18, 4)
-  dayLow       Decimal? @map("day_low") @db.Decimal(18, 4)
-  volume       BigInt?
-  capturedAt   DateTime @default(now()) @map("captured_at")
+model Tick {
+  userId     String   @map("user_id") @db.Uuid
+  stockId    Int      @map("stock_id")
+  capturedAt DateTime @map("captured_at") @db.Timestamptz(6)
+  price      Decimal  @db.Decimal(18, 4)
+  volume     BigInt?
 
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
 
-  @@index([stockId, capturedAt])
-  @@map("market_snapshots")
+  @@id([userId, stockId, capturedAt])
+  @@index([userId, stockId, capturedAt(sort: Desc)], map: "ticks_user_stock_ts")
+  @@map("ticks")
+}
+
+model MinuteBar {
+  userId     String   @map("user_id") @db.Uuid
+  stockId    Int      @map("stock_id")
+  capturedAt DateTime @map("captured_at") @db.Timestamptz(6)
+  open       Decimal  @db.Decimal(18, 4) 
+  high       Decimal  @db.Decimal(18, 4)
+  low        Decimal  @db.Decimal(18, 4)
+  close      Decimal  @db.Decimal(18, 4)
+  volume     BigInt?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@id([userId, stockId, capturedAt])
+  @@index([userId, stockId, capturedAt(sort: Desc)], map: "minute_bars_user_stock_ts")
+  @@map("minute_bars")
+}
+
+model DailyBar {
+  userId     String   @map("user_id") @db.Uuid
+  stockId    Int      @map("stock_id")
+  capturedAt DateTime @map("captured_at") @db.Timestamptz(6)
+  open       Decimal  @db.Decimal(18, 4)
+  high       Decimal  @db.Decimal(18, 4)
+  low        Decimal  @db.Decimal(18, 4)
+  close      Decimal  @db.Decimal(18, 4)
+  volume     BigInt?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@id([userId, stockId, capturedAt])
+  @@index([userId, stockId, capturedAt(sort: Desc)], map: "daily_bars_user_stock_ts")
+  @@map("daily_bars")
 }
 
 model MarketIndicator {
