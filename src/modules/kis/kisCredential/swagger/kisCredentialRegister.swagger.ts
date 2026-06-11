@@ -1,5 +1,4 @@
-export const KIS_REGISTER_API_DESCRIPTION =
-  "유저가 KIS에서 발급받은 appkey/appsecret을 우리 서비스에 등록합니다.";
+export const KIS_REGISTER_API_DESCRIPTION = "유저가 KIS에서 발급받은 appkey/appsecret을 우리 서비스에 등록합니다.";
 
 export const KIS_REGISTER_SUCCESS_RESPONSE = {
   statusCode: 201,
@@ -77,8 +76,7 @@ export const KIS_REGISTER_INVALID_CREDENTIAL_RESPONSE = {
   statusCode: 422,
   timestamp: "2026-06-08T10:00:00.000Z",
   path: "/api/auth/kis-credential",
-  message:
-    "유효하지 않은 KIS API 키입니다. KIS에서 발급받은 키를 확인해주세요.",
+  message: "유효하지 않은 KIS API 키입니다. KIS에서 발급받은 키를 확인해주세요.",
   error: "InvalidKisCredentialException",
   data: null,
 };

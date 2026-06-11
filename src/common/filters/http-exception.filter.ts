@@ -1,10 +1,4 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
-} from "@nestjs/common";
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
 import { Request, Response } from "express";
 import { CustomBusinessException } from "../exceptions/custom-business.exception";
 
@@ -16,20 +10,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const req = ctx.getRequest<Request>();
 
     // 1. 상태 코드 추출 (HttpException이 아니면 기본값 500 세팅)
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     // 2. 메시지 및 페이로드 추출
-    const payload =
-      exception instanceof HttpException ? exception.getResponse() : null;
-    const rawMessage =
-      typeof payload === "string" ? payload : (payload as any)?.message;
+    const payload = exception instanceof HttpException ? exception.getResponse() : null;
+    const rawMessage = typeof payload === "string" ? payload : (payload as any)?.message;
 
-    let message = Array.isArray(rawMessage)
-      ? rawMessage[0]
-      : (rawMessage ?? exception.message);
+    let message = Array.isArray(rawMessage) ? rawMessage[0] : (rawMessage ?? exception.message);
     if (exception.name?.includes("PrismaClient") && message) {
       if (message.includes("The table")) {
         const tableIndex = message.indexOf("The table");

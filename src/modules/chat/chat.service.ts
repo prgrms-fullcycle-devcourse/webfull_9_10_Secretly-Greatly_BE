@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { MessageType } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
@@ -17,9 +13,7 @@ export class ChatService {
   private validateMessageContent(message: string) {
     const normalizedContent = message.toLowerCase().replace(/\s/g, "");
 
-    const hasBannedWord = this.bannedWords.some((word) =>
-      normalizedContent.includes(word),
-    );
+    const hasBannedWord = this.bannedWords.some((word) => normalizedContent.includes(word));
 
     if (hasBannedWord) {
       throw new BadRequestException("금칙어가 포함된 메시지입니다.");

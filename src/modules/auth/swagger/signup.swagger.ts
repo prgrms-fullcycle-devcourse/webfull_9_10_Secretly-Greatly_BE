@@ -23,16 +23,14 @@ export const SIGNUP_VALIDATION_ERROR_RESPONSE = {
   statusCode: 400,
   timestamp: "2026-06-02T09:41:15.317Z",
   path: "/api/auth",
-  message:
-    "비밀번호는 8자 이상 16자 이하의 영문, 숫자, 특수문자를 포함해야 합니다.",
+  message: "비밀번호는 8자 이상 16자 이하의 영문, 숫자, 특수문자를 포함해야 합니다.",
   data: null,
   error: "ValidationException", // 가공 필터 대응 명칭
 };
 
 export const SIGNUP_VALIDATION_API_RESPONSE = {
   status: 400,
-  description:
-    "비밀번호 글자수 상한선 규약 미준수 및 입력 포맷 유효성 검사 실패",
+  description: "비밀번호 글자수 상한선 규약 미준수 및 입력 포맷 유효성 검사 실패",
   schema: {
     example: SIGNUP_VALIDATION_ERROR_RESPONSE,
   },
