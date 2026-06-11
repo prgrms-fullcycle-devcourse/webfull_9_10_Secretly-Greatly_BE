@@ -1,6 +1,2 @@
-allowBuilds:
-  '@nestjs/core': false
-  '@prisma/client': true
-  '@prisma/engines': true
-  bcrypt: true
-  prisma: true
+packages:
+  - '.'
