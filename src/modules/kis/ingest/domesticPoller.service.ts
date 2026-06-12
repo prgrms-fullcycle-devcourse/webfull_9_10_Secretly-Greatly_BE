@@ -38,12 +38,23 @@ export class DomesticPollerService {
   }
 
   private isMarketOpen(): boolean {
-    const now = new Date();
-    const kst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
-    const h = kst.getHours();
-    const m = kst.getMinutes();
-    const afterOpen = h > 9 || (h === 9 && m >= 0);
-    const beforeClose = h < 15 || (h === 15 && m <= 30); // 15:30 마감
-    return afterOpen && beforeClose;
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Seoul",
+      hour: "2-digit",
+      minute: "2-digit",
+      weekday: "short",
+      hour12: false,
+    }).formatToParts(new Date());
+
+    const get = (t: string) => parts.find((p) => p.type === t)!.value;
+    const h = Number(get("hour")) % 24; // "24"를 0으로 정규화
+    const m = Number(get("minute"));
+    const wd = get("weekday"); // "Mon" ~ "Sun"
+
+    if (wd === "Sat" || wd === "Sun") return false; // 주말 제외
+    // TODO: 공휴일 제외 로직 필요
+
+    const afterMin = h * 60 + m;
+    return afterMin >= 9 * 60 && afterMin <= 15 * 60 + 30; // 09:00 ~ 15:30
   }
 }
