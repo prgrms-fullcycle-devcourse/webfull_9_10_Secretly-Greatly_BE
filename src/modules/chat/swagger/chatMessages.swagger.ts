@@ -12,6 +12,8 @@ export const CHAT_MESSAGES_API_RESPONSE = {
   schema: {
     example: {
       statusCode: 200,
+      timestamp: "2026-06-12T15:00:00.000Z",
+      path: "/api/chats/stocks/NVDA",
       message: "요청이 성공적으로 처리되었습니다.",
       data: {
         stockId: 1,
@@ -45,6 +47,8 @@ export const CHAT_MESSAGES_NOT_FOUND_API_RESPONSE = {
   schema: {
     example: {
       statusCode: 404,
+      timestamp: "2026-06-12T15:00:00.000Z",
+      path: "/api/chats/stocks/INVALID",
       message: "존재하지 않는 종목입니다.",
       data: null,
       error: "NotFoundException",
