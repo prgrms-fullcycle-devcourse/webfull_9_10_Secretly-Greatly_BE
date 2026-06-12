@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../../common/prisma/prisma.service";
-import { KisDomesticPriceService } from "../price/kis-domestic-price.service";
+import { KisDomesticPriceService } from "../price/kisDomesticPrice.service";
 import { KisDomesticMultiPriceItem } from "../price/dto/kisDomesticPrice.dto";
 
 @Injectable()
