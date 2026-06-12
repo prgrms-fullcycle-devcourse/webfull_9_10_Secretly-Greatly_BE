@@ -1,4 +1,5 @@
-export const CHAT_REPORT_API_DESCRIPTION = "부적절한 익명 메시지를 신고합니다.";
+export const CHAT_REPORT_API_DESCRIPTION =
+  "부적절한 채팅 메시지를 신고합니다. 동일 사용자는 같은 메시지를 중복 신고할 수 없으며, 신고 누적 수가 5회 이상이면 메시지가 블라인드 처리됩니다.";
 
 export const CHAT_REPORT_API_RESPONSE = {
   status: 200,

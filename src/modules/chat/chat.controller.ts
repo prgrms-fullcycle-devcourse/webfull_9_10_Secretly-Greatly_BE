@@ -4,6 +4,7 @@ import { Request } from "express";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
 import { ChatService } from "./chat.service";
+import { GetChatMessagesQueryDto } from "./dto/req/get-chat-messages.query.dto";
 import {
   CHAT_MESSAGES_API_DESCRIPTION,
   CHAT_MESSAGES_API_RESPONSE,
@@ -32,8 +33,8 @@ export class ChatController {
   })
   @ApiResponse(CHAT_MESSAGES_API_RESPONSE)
   @ApiResponse(CHAT_MESSAGES_NOT_FOUND_API_RESPONSE)
-  async getMessages(@Param("ticker") ticker: string, @Query("page") page = "1", @Query("limit") limit = "30") {
-    return this.chatService.getMessagesByTicker(ticker, Number(page), Number(limit));
+  async getMessages(@Param("ticker") ticker: string, @Query() query: GetChatMessagesQueryDto) {
+    return this.chatService.getMessagesByTicker(ticker, query.page, query.limit);
   }
 
   @Patch(":chatId/report")
