@@ -18,7 +18,10 @@ export class DomesticPollerService {
   @Cron("*/30 * 9-15 * * 1-5", { timeZone: "Asia/Seoul" })
   async pollAll() {
     this.logger.log("🔥 크론 진입");
-    if (!this.isMarketOpen()) return;
+    if (!this.isMarketOpen()) {
+      this.logger.log("장 운영 시간이 아닙니다.");
+      return;
+    }
 
     // KIS 키를 등록한 사용자만 대상
     const users = await this.prisma.user.findMany({
