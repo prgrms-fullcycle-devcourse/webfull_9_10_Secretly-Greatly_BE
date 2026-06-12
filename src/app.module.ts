@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { ScheduleModule } from "@nestjs/schedule";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { RedisModule } from "@nestjs-modules/ioredis";
 import { AppController } from "./app.controller";
@@ -11,6 +12,7 @@ import { CryptoModule } from "./common/crypto/crypto.module";
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     RedisModule.forRootAsync({
       inject: [ConfigService],
