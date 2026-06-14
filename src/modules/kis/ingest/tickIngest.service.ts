@@ -1,7 +1,9 @@
+// TODO: tickIngest.service.ts → domesticIngest.service.ts 파일명 변경
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../../common/prisma/prisma.service";
 import { KisDomesticPriceService } from "../price/kisDomesticPrice.service";
 import { KisDomesticMultiPriceItem } from "../price/dto/kisDomesticPrice.dto";
+import { QuoteService, IngestedQuote } from "../../quote/quote.service";
 
 @Injectable()
 export class TickIngestService {
@@ -10,6 +12,7 @@ export class TickIngestService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly kisDomesticPriceService: KisDomesticPriceService,
+    private readonly quoteService: QuoteService,
   ) {}
 
   async ingestUserWatchlist(userId: string) {
@@ -39,37 +42,40 @@ export class TickIngestService {
 
     const capturedAt = new Date();
     const skipped: { code: string; name: string }[] = [];
-    const rows = quotes
-      .map((q) => {
-        const code = q.inter_shrn_iscd?.trim();
 
-        if (!code) {
-          // 빈 슬롯은 pass
-          return null;
-        }
+    // 틱 적재용 행 + 캐시용 배열을 함께 구성
+    const rows: { userId: string; stockId: number; capturedAt: Date; price: string; volume: bigint }[] = [];
+    const cacheQuotes: IngestedQuote[] = [];
 
-        const stockId = codeToStockId.get(q.inter_shrn_iscd); // 단축 종목코드
-        if (!stockId) {
-          // 매핑되지 않는 응답 로깅 및 skip
-          skipped.push({ code: q.inter_shrn_iscd, name: q.inter_kor_isnm });
-          return null;
-        }
-        return {
-          userId,
-          stockId,
-          capturedAt,
-          price: q.inter2_prpr, // 현재가
-          volume: BigInt(q.acml_vol || "0"),
-        };
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null);
+    for (const q of quotes) {
+      const code = q.inter_shrn_iscd?.trim();
+      if (!code) continue; // 빈 슬롯 pass
+
+      const stockId = codeToStockId.get(q.inter_shrn_iscd); // 단축 종목코드
+      if (!stockId) {
+        skipped.push({ code: q.inter_shrn_iscd, name: q.inter_kor_isnm });
+        continue;
+      }
+
+      const volume = BigInt(q.acml_vol || "0");
+      rows.push({ userId, stockId, capturedAt, price: q.inter2_prpr, volume });
+      cacheQuotes.push({
+        stockId,
+        price: q.inter2_prpr, // 현재가
+        volume,
+        change: Number(q.prdy_ctrt), // 전일 대비율(등락률)
+      });
+    }
 
     if (skipped.length > 0) {
       this.logger.warn(
         `user=${userId} 스킵된 종목 ${skipped.length}건: ` + skipped.map((s) => `${s.code}(${s.name})`).join(", "),
       );
     }
+
     await this.prisma.withUser(userId, (tx) => tx.tick.createMany({ data: rows, skipDuplicates: true }));
+
+    await this.quoteService.cacheIngestedQuotes(userId, cacheQuotes, capturedAt);
 
     this.logger.log(`user=${userId} 틱 ${rows.length}건 적재`);
   }

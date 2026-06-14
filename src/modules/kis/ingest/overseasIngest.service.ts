@@ -4,6 +4,7 @@ import { PrismaService } from "../../../common/prisma/prisma.service";
 import { KisOverseasPriceService, OverseasSymbolInput } from "../price/kisOverseasPrice.service";
 import { KisOverseasMultiPriceItem } from "../price/dto/kisOverseasPrice.dto";
 import { EXCHANGE_TO_EXCD } from "../price/kisPrice.constant";
+import { QuoteService, IngestedQuote } from "../../quote/quote.service";
 
 // 현재 미장 정규장 거래소만 수집 대상
 const OVERSEAS_EXCHANGES = [Exchange.NASDAQ, Exchange.NYSE];
@@ -15,6 +16,7 @@ export class OverseasIngestService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly kisOverseasPriceService: KisOverseasPriceService,
+    private readonly quoteService: QuoteService,
   ) {}
 
   async ingestUserWatchlist(userId: string) {
@@ -29,7 +31,7 @@ export class OverseasIngestService {
       return;
     }
 
-    // excd(거래소 코드):code(종목 코드) key 생성 및 매핑 - 해외 종목 코드의 중복 가능성을 대비
+    // excd(거래소 코드):code(종목 코드) key 생성 및 매핑 - 해외 종목 코드의 중복 가능성 대비
     const excdSymbToStockId = new Map<string, number>();
     for (const it of items) {
       const excd = EXCHANGE_TO_EXCD[it.stock.exchange];
@@ -46,25 +48,30 @@ export class OverseasIngestService {
 
     const capturedAt = new Date();
     const skipped: { code: string; name: string }[] = [];
-    const rows = quotes
-      .map((q) => {
-        const code = q.symb?.trim();
-        if (!code) return null; // 빈 슬롯 pass
 
-        const stockId = excdSymbToStockId.get(`${q.excd}:${code}`);
-        if (!stockId) {
-          skipped.push({ code, name: q.knam });
-          return null;
-        }
-        return {
-          userId,
-          stockId,
-          capturedAt,
-          price: new Prisma.Decimal(q.last), // 현재가
-          volume: BigInt(q.tvol || "0"), // 거래량
-        };
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null);
+    const rows: { userId: string; stockId: number; capturedAt: Date; price: Prisma.Decimal; volume: bigint }[] = [];
+    const cacheQuotes: IngestedQuote[] = [];
+
+    for (const q of quotes) {
+      const code = q.symb?.trim();
+      if (!code) continue; // 빈 슬롯 pass
+
+      const stockId = excdSymbToStockId.get(`${q.excd}:${code}`);
+      if (!stockId) {
+        skipped.push({ code, name: q.knam });
+        continue;
+      }
+
+      const price = new Prisma.Decimal(q.last);
+      const volume = BigInt(q.tvol || "0");
+      rows.push({ userId, stockId, capturedAt, price, volume });
+      cacheQuotes.push({
+        stockId,
+        price, // 현재가
+        volume,
+        change: Number(q.rate), // 등락율
+      });
+    }
 
     if (skipped.length > 0) {
       this.logger.warn(
@@ -73,6 +80,8 @@ export class OverseasIngestService {
     }
 
     await this.prisma.withUser(userId, (tx) => tx.tick.createMany({ data: rows, skipDuplicates: true }));
+
+    await this.quoteService.cacheIngestedQuotes(userId, cacheQuotes, capturedAt);
 
     this.logger.log(`user=${userId} 해외 틱 ${rows.length}건 적재`);
   }
