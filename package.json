@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@nestjs-modules/ioredis": "^2.2.1",
+    "@nestjs-modules/mailer": "^2.3.6",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.4",
@@ -34,6 +35,7 @@
     "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
     "ioredis": "^5.11.1",
+    "nodemailer": "^8.0.11",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
@@ -52,6 +54,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/node": "^22.19.19",
+    "@types/nodemailer": "^8.0.1",
     "@types/passport-jwt": "^4.0.1",
     "@typescript-eslint/eslint-plugin": "^8.60.1",
     "@typescript-eslint/parser": "^8.60.1",

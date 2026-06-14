@@ -9,6 +9,7 @@ import { KisModule } from "./modules/kis/kis.module";
 import { ChatModule } from "./modules/chat/chat.module";
 import { StocksModule } from "./modules/stocks/stocks.module";
 import { CryptoModule } from "./common/crypto/crypto.module";
+import { AuthPasswordsModule } from "./modules/auth/passwords/auth-passwords.module";
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CryptoModule } from "./common/crypto/crypto.module";
     KisModule,
     StocksModule,
     ChatModule,
+    AuthPasswordsModule,
   ],
   providers: [],
   controllers: [AppController],
