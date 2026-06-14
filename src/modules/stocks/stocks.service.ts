@@ -18,23 +18,24 @@ export class StockItemFetchAll {
         ...(market ? { market: RESPONSE_TO_MARKET[market] } : {}),
         ...this.buildKeywordWhere(keyword),
       },
-      include: {
-        snapshots: {
-          orderBy: { capturedAt: "desc" },
-          take: 1,
-        },
-      },
+      // include: {
+      //   snapshots: {
+      //     orderBy: { capturedAt: "desc" },
+      //     take: 1,
+      //   },
+      // },
     });
 
     const items: StockItemDto[] = stocks.map((s) => {
-      const latest = s.snapshots[0];
+      // TODO: 스냅샷 삭제로 인한 임시 하드코딩 - snapshot 복구 후 원복 필요
+      // const latest = s.snapshots[0];
       return {
         stockId: s.id,
         code: s.code,
         name: s.name,
-        price: latest ? Number(latest.currentPrice) : 0,
-        change: latest ? Number(latest.changeRate) : 0, // 기호 없는 순수 실수
-        volume: latest?.volume != null ? Number(latest.volume) : 0,
+        price: 0, // TODO: 임시 하드코딩 (원래: latest ? Number(latest.currentPrice) : 0)
+        change: 0, // TODO: 임시 하드코딩 (원래: latest ? Number(latest.changeRate) : 0) - 기호 없는 순수 실수
+        volume: 0, // TODO: 임시 하드코딩 (원래: latest?.volume != null ? Number(latest.volume) : 0)
         market: MARKET_TO_RESPONSE[s.market], // KR/US/CRYPTO -> DOMESTIC/OVERSEAS/COIN
       };
     });
