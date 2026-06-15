@@ -1,4 +1,4 @@
-import { AssetType, Exchange, Market, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
@@ -25,16 +25,22 @@ async function main() {
     where: {
       code_exchange: {
         code: "005930",
-        exchange: Exchange.KRX,
+        exchange: "KRX",
       },
     },
-    update: {},
+    update: {
+      name: "삼성전자",
+      market: "KR",
+      exchangeTimezone: "ASIA_SEOUL",
+      assetType: "STOCK",
+    },
     create: {
       code: "005930",
       name: "삼성전자",
-      market: Market.KR,
-      exchange: Exchange.KRX,
-      assetType: AssetType.STOCK,
+      market: "KR",
+      exchange: "KRX",
+      assetType: "STOCK",
+      exchangeTimezone: "ASIA_SEOUL",
     },
   });
 
