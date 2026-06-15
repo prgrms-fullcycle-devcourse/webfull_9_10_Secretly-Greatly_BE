@@ -210,4 +210,54 @@ export class ChatService {
       isBlinded: updatedMessage.isHidden,
     };
   }
+
+  async getAllMessages(user: JwtPayload) {
+    const messages = await this.prisma.chatMessage.findMany({
+      where: {
+        isHidden: false,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nickname: true,
+          },
+        },
+        room: {
+          include: {
+            stock: {
+              select: {
+                code: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const logs = messages.map((message) => {
+      const ticker = message.room.stock.code;
+      const nickname = message.user?.nickname ?? "알 수 없음";
+      const time = message.createdAt.toISOString().slice(11, 19);
+
+      return {
+        chatId: message.id,
+        ticker,
+        senderType: message.userId === user.sub ? "MY_LOG" : "OTHER",
+        maskedNickname: nickname,
+        message: message.message,
+        formattedLog: `[${time}] [DEBUG] [${ticker}] ${nickname}: ${message.message}`,
+        createdAt: message.createdAt,
+      };
+    });
+
+    return {
+      searchScope: "GLOBAL_TIMELINE",
+      totalFetched: logs.length,
+      logs,
+    };
+  }
 }
