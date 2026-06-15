@@ -5,9 +5,10 @@ import { DomesticPollerService } from "./domesticPoller.service";
 import { OverseasIngestService } from "./overseasIngest.service";
 import { OverseasPollerService } from "./overseasPoller.service";
 import { MaintenanceService } from "./maintenance.service";
+import { QuoteModule } from "../../quote/quote.module";
 
 @Module({
-  imports: [PriceModule],
+  imports: [PriceModule, QuoteModule],
   providers: [
     TickIngestService,
     DomesticPollerService,
