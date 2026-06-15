@@ -27,7 +27,7 @@ export class SimulationService {
     const totalInvestedAmount = currentTotalAmount + purchaseTotalAmount;
 
     // 2. 수정 평단가 - 소수점 2자리 반올림 보정
-    const calculatedAvgPrice = Math.round((totalInvestedAmount / purchaseTotalAmount) * 100) / 100;
+    const calculatedAvgPrice = Math.round((totalInvestedAmount / calculatedQuantity) * 100) / 100;
 
     // 3. 가상 평가 금액
     const calculatedEvaluationAmount = currentPrice * calculatedQuantity;
