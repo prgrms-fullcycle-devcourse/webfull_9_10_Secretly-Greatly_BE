@@ -13,6 +13,8 @@ import { ChatService } from "./chat.service";
 import { JoinRoomRequestDto } from "./dto/req/join-room.request.dto";
 import { SendMessageRequestDto } from "./dto/req/send-message.request.dto";
 
+const GLOBAL_TICKER = "GLOBAL";
+
 @WebSocketGateway({
   cors: {
     origin: "*",
@@ -54,12 +56,13 @@ export class ChatGateway implements OnGatewayConnection {
 
   @SubscribeMessage("join_room")
   handleJoinRoom(@ConnectedSocket() client: Socket, @MessageBody() body: JoinRoomRequestDto) {
-    const roomName = `stock:${body.ticker}`;
+    const ticker = body?.ticker ?? GLOBAL_TICKER;
+    const roomName = `stock:${ticker}`;
 
     void client.join(roomName);
 
     client.emit("joined_room", {
-      ticker: body.ticker,
+      ticker,
       roomName,
       message: "채팅방에 입장했습니다.",
     });
@@ -89,11 +92,16 @@ export class ChatGateway implements OnGatewayConnection {
         return;
       }
 
-      const message = await this.chatService.sendMessage(user, body);
+      const ticker = body?.ticker ?? GLOBAL_TICKER;
+
+      const message = await this.chatService.sendMessage(user, {
+        ...body,
+        ticker,
+      });
 
       this.lastMessageAt.set(user.sub, now);
 
-      this.server.to(`stock:${body.ticker}`).emit("receive_message", message);
+      this.server.to(`stock:${ticker}`).emit("receive_message", message);
 
       return message;
     } catch (error) {
