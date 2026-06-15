@@ -77,7 +77,6 @@ enum ImpactLevel {
   HIGH
 }
 
-
 enum MessageType {
   NORMAL
   SYSTEM
@@ -100,10 +99,10 @@ enum AlertType {
 }
 
 model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  email     String?  @unique
-  nickname  String   @unique
-  password  String?
+  id       String  @id @default(uuid()) @db.Uuid
+  email    String? @unique
+  nickname String  @unique
+  password String?
 
   kisAppKeyEnc              String?   @map("kis_app_key_enc")
   kisAppSecretEnc           String?   @map("kis_app_secret_enc")
@@ -120,8 +119,8 @@ model User {
   minuteBars        MinuteBar[]
   dailyBars         DailyBar[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
   passwordChangedAt DateTime? @map("password_changed_at")
 
   @@map("users")
@@ -158,22 +157,22 @@ model UserSetting {
 }
 
 model Stock {
-  id        Int       @id @default(autoincrement())
-  code      String
-  name      String
-  market    Market
-  exchange  Exchange
-  assetType AssetType @map("asset_type")
+  id               Int              @id @default(autoincrement())
+  code             String
+  name             String
+  market           Market
+  exchange         Exchange
+  assetType        AssetType        @map("asset_type")
   exchangeTimezone ExchangeTimezone @map("exchange_timezone")
 
-  watchlists      Watchlist[]
-  chatRoom        ChatRoom?
-  news            News[]
-  alertLogs       AlertLog[]
-  positions       Position[]
-  ticks           Tick[]
-  minuteBars      MinuteBar[]
-  dailyBars       DailyBar[]
+  watchlists Watchlist[]
+  chatRoom   ChatRoom?
+  news       News[]
+  alertLogs  AlertLog[]
+  positions  Position[]
+  ticks      Tick[]
+  minuteBars MinuteBar[]
+  dailyBars  DailyBar[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -220,7 +219,7 @@ model MinuteBar {
   userId     String   @map("user_id") @db.Uuid
   stockId    Int      @map("stock_id")
   capturedAt DateTime @map("captured_at") @db.Timestamptz(6)
-  open       Decimal  @db.Decimal(18, 4) 
+  open       Decimal  @db.Decimal(18, 4)
   high       Decimal  @db.Decimal(18, 4)
   low        Decimal  @db.Decimal(18, 4)
   close      Decimal  @db.Decimal(18, 4)
@@ -235,14 +234,14 @@ model MinuteBar {
 }
 
 model DailyBar {
-  userId     String   @map("user_id") @db.Uuid
-  stockId    Int      @map("stock_id")
-  tradeDate  DateTime @map("trade_date") @db.Date
-  open       Decimal  @db.Decimal(18, 4)
-  high       Decimal  @db.Decimal(18, 4)
-  low        Decimal  @db.Decimal(18, 4)
-  close      Decimal  @db.Decimal(18, 4)
-  volume     BigInt?
+  userId    String   @map("user_id") @db.Uuid
+  stockId   Int      @map("stock_id")
+  tradeDate DateTime @map("trade_date") @db.Date
+  open      Decimal  @db.Decimal(18, 4)
+  high      Decimal  @db.Decimal(18, 4)
+  low       Decimal  @db.Decimal(18, 4)
+  close     Decimal  @db.Decimal(18, 4)
+  volume    BigInt?
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
@@ -299,11 +298,20 @@ model Position {
 }
 
 model PositionSimulation {
-  id               Int     @id @default(autoincrement())
-  positionId       Int     @map("position_id")
-  buyPrice         Decimal @map("buy_price") @db.Decimal(18, 4)
-  buyQuantity      Decimal @map("buy_quantity") @db.Decimal(18, 8)
-  expectedAvgPrice Decimal @map("expected_avg_price") @db.Decimal(18, 4)
+  id         Int @id @default(autoincrement())
+  positionId Int @map("position_id")
+
+  buyPrice    Decimal @map("buy_price") @db.Decimal(18, 4)
+  buyQuantity Decimal @map("buy_quantity") @db.Decimal(18, 8)
+
+  currentPrice               Decimal @map("current_price") @db.Decimal(18, 4) // 현재가 (currentPrice: 45000.00)
+  calculatedAvgPrice         Decimal @map("calculated_avg_price") @db.Decimal(18, 4) // 수정 평단가 (calculatedAvgPrice: 60000.00)
+  calculatedQuantity         Decimal @map("calculated_quantity") @db.Decimal(18, 8) // 총 매수 수량 (calculatedQuantity: 3.0)
+  calculatedEvaluationAmount Decimal @map("calculated_evaluation_amount") @db.Decimal(18, 4) // 평가 금액 (calculatedEvaluationAmount: 135000.00)
+  calculatedEvaluationProfit Decimal @map("calculated_evaluation_profit") @db.Decimal(18, 4) // 평가 손익 (calculatedEvaluationProfit: -45000.00)
+  calculatedRateOfReturn     Decimal @map("calculated_rate_of_return") @db.Decimal(5, 2) // 순수 소수점 수익률 (calculatedRateOfReturn: -25.00)
+
+  formattedLog String @map("formatted_log") @db.Text
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -324,7 +332,6 @@ model ChatRoom {
   @@map("chat_rooms")
 }
 
-
 model ChatMessage {
   id          Int         @id @default(autoincrement())
   roomId      Int         @map("room_id")
@@ -336,8 +343,8 @@ model ChatMessage {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  room    ChatRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user    User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  room    ChatRoom     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user    User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   reports ChatReport[]
 
   @@index([roomId, createdAt])

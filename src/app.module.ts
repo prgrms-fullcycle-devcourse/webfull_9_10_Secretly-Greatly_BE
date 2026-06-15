@@ -10,6 +10,7 @@ import { ChatModule } from "./modules/chat/chat.module";
 import { StocksModule } from "./modules/stocks/stocks.module";
 import { CryptoModule } from "./common/crypto/crypto.module";
 import { AuthPasswordsModule } from "./modules/auth/passwords/auth-passwords.module";
+import { SimulationModule } from "./modules/simulation/simulation.module";
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AuthPasswordsModule } from "./modules/auth/passwords/auth-passwords.mod
     StocksModule,
     ChatModule,
     AuthPasswordsModule,
+    SimulationModule,
   ],
   providers: [],
   controllers: [AppController],
