@@ -48,6 +48,11 @@ enum Exchange {
   UPBIT
 }
 
+enum ExchangeTimezone {
+  ASIA_SEOUL       @map("Asia/Seoul")
+  AMERICA_NEW_YORK @map("America/New_York")
+}
+
 enum IndicatorType {
   KOSPI
   NASDAQ
@@ -159,6 +164,7 @@ model Stock {
   market    Market
   exchange  Exchange
   assetType AssetType @map("asset_type")
+  exchangeTimezone ExchangeTimezone @map("exchange_timezone")
 
   watchlists      Watchlist[]
   chatRoom        ChatRoom?
@@ -231,7 +237,7 @@ model MinuteBar {
 model DailyBar {
   userId     String   @map("user_id") @db.Uuid
   stockId    Int      @map("stock_id")
-  capturedAt DateTime @map("captured_at") @db.Timestamptz(6)
+  tradeDate  DateTime @map("trade_date") @db.Date
   open       Decimal  @db.Decimal(18, 4)
   high       Decimal  @db.Decimal(18, 4)
   low        Decimal  @db.Decimal(18, 4)
@@ -241,8 +247,8 @@ model DailyBar {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
 
-  @@id([userId, stockId, capturedAt])
-  @@index([userId, stockId, capturedAt(sort: Desc)], map: "daily_bars_user_stock_ts")
+  @@id([userId, stockId, tradeDate])
+  @@index([userId, stockId, tradeDate(sort: Desc)], map: "daily_bars_user_stock_td")
   @@map("daily_bars")
 }
 
