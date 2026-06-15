@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Req, Res, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiBody, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { Request, Response } from "express";
+import { Response } from "express";
 import { PasswordMismatchException } from "../../common/exceptions/password-mismatch.exception";
 import { CustomResponse } from "../../common/responses/custom.response";
 import { AuthService } from "./auth.service";
@@ -10,7 +10,6 @@ import { AnonymousResponseDto } from "./dto/res/anonymous-response.dto";
 import { LoginResponseDto } from "./dto/res/login.response.dto";
 import { SignUpResponseDto } from "./dto/res/signup.response.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
-import { JwtPayload } from "./interfaces/jwt-payload.interface";
 import {
   ANONYMOUS_API_DESCRIPTION,
   ANONYMOUS_API_RESPONSE,
@@ -34,10 +33,7 @@ import {
   SIGNUP_MISMATCH_API_RESPONSE,
   SIGNUP_VALIDATION_API_RESPONSE,
 } from "./swagger/signup.swagger";
-
-type AuthenticatedRequest = Request & {
-  user: JwtPayload;
-};
+import { AuthenticatedRequest } from "./interfaces/request.inerface";
 
 @ApiTags("Auth")
 @Controller("api/auth")

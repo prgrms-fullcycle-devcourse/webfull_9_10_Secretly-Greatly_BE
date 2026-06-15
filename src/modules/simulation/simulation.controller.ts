@@ -10,6 +10,7 @@ import {
   SIMULATION_SUCCESS_RESPONSE,
   SIMULATION_VALIDATION_RESPONSE,
 } from "../auth/swagger/simulation.swagger";
+import { AuthenticatedRequest } from "../auth/interfaces/request.inerface";
 
 @ApiTags("Simulation (자산 시뮬레이션)")
 @Controller("api/indicators")
@@ -31,10 +32,10 @@ export class SimulationController {
       "가상 추매 조건을 입력받아 7대 지표 보정 연산을 수행하고 결과를 DB에 저장한 뒤, 위장 로그와 함께 반환합니다.",
   })
   async runStockSimulation(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() body: StockSimulationRequestDto,
   ): Promise<CustomResponse<StockSimulationResponseDto>> {
-    const userId = req.user.id;
+    const userId = req.user.sub;
 
     const data = await this.simulationService.calculateAndSaveSimulation(userId, body);
 
