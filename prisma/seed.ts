@@ -44,6 +44,39 @@ async function main() {
     },
   });
 
+  const globalStock = await prisma.stock.upsert({
+    where: {
+      code_exchange: {
+        code: "GLOBAL",
+        exchange: "KRX",
+      },
+    },
+    update: {
+      name: "GLOBAL_CHAT",
+      market: "KR",
+      exchangeTimezone: "ASIA_SEOUL",
+      assetType: "STOCK",
+    },
+    create: {
+      code: "GLOBAL",
+      name: "GLOBAL_CHAT",
+      market: "KR",
+      exchange: "KRX",
+      assetType: "STOCK",
+      exchangeTimezone: "ASIA_SEOUL",
+    },
+  });
+
+  await prisma.chatRoom.upsert({
+    where: {
+      stockId: globalStock.id,
+    },
+    update: {},
+    create: {
+      stockId: globalStock.id,
+    },
+  });
+
   console.log("✅ Seed completed");
 }
 

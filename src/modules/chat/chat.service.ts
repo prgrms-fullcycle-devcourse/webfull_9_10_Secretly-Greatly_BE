@@ -33,8 +33,12 @@ export class ChatService {
       throw new NotFoundException("존재하지 않는 종목입니다.");
     }
 
-    const chatRoom = await this.prisma.chatRoom.findUnique({
+    const chatRoom = await this.prisma.chatRoom.upsert({
       where: {
+        stockId: stock.id,
+      },
+      update: {},
+      create: {
         stockId: stock.id,
       },
     });
@@ -215,6 +219,11 @@ export class ChatService {
     const messages = await this.prisma.chatMessage.findMany({
       where: {
         isHidden: false,
+        room: {
+          stock: {
+            code: "GLOBAL",
+          },
+        },
       },
       include: {
         user: {
