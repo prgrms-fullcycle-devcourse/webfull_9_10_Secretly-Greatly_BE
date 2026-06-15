@@ -30,12 +30,12 @@ export class ChatGateway implements OnGatewayConnection {
   ) {}
 
   handleConnection(client: Socket) {
-    console.log("socket connected:", client.id);
+    //console.log("socket connected:", client.id);
 
     const token = client.handshake.auth.token;
 
     if (typeof token !== "string") {
-      console.log("token missing");
+      //console.log("token missing");
       client.disconnect();
       return;
     }
@@ -45,9 +45,9 @@ export class ChatGateway implements OnGatewayConnection {
 
       client.data.user = payload;
 
-      console.log("socket user:", client.data.user);
+      //console.log("socket user:", client.data.user);
     } catch {
-      console.log("Invalid access token");
+      //console.log("Invalid access token");
       client.disconnect();
     }
   }
@@ -68,7 +68,15 @@ export class ChatGateway implements OnGatewayConnection {
   @SubscribeMessage("send_message")
   async handleSendMessage(@ConnectedSocket() client: Socket, @MessageBody() body: SendMessageRequestDto) {
     try {
-      const user = client.data.user as JwtPayload;
+      const user = client.data.user as JwtPayload | undefined;
+
+      if (!user) {
+        client.emit("chat_error", {
+          message: "인증되지 않은 사용자입니다.",
+        });
+        client.disconnect();
+        return;
+      }
 
       const now = Date.now();
       const lastSentAt = this.lastMessageAt.get(user.sub) ?? 0;
