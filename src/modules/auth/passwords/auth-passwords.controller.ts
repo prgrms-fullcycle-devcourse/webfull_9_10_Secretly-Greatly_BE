@@ -3,7 +3,6 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagg
 import { AuthPasswordsService } from "./auth-passwords.service";
 import { CustomResponse } from "../../../common/responses/custom.response";
 import { JwtAuthGuard } from "../guards/jwt-auth.guard";
-import { JwtPayload } from "../interfaces/jwt-payload.interface";
 import { PasswordResetRequestDto } from "./dto/req/password-reset-request.dto";
 import { ChangePasswordRequestDto } from "./dto/req/change-password.request.dto";
 import { PasswordResetResponseDto } from "./dto/res/password-reset-response.dto";
@@ -16,6 +15,7 @@ import {
   PASSWORD_RESET_NOT_FOUND_API_RESPONSE,
   PASSWORD_RESET_SUCCESS_API_RESPONSE,
 } from "../swagger/passwords.swagger";
+import { AuthenticatedRequest } from "../interfaces/request.inerface";
 
 @ApiTags("Auth Passwords")
 @Controller("api/auth/passwords")
@@ -43,7 +43,7 @@ export class AuthPasswordsController {
   @ApiResponse(PASSWORD_CHANGE_MISMATCH_API_RESPONSE)
   @ApiResponse(PASSWORD_CHANGE_INVALID_API_RESPONSE)
   async changePassword(
-    @Req() req: { user: JwtPayload },
+    @Req() req: AuthenticatedRequest,
     @Body() body: ChangePasswordRequestDto,
   ): Promise<CustomResponse<PasswordUpdateResponseDto>> {
     if (body.newPassword !== body.checkNewPassword) {

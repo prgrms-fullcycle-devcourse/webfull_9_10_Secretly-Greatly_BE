@@ -3,13 +3,13 @@ import { ApiTags, ApiOperation, ApiCookieAuth, ApiResponse } from "@nestjs/swagg
 import { StockItemFetchAll } from "./stocks.service";
 import { GetStocksQueryDto } from "./dto/getStocksQuery.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
 import {
   STOCK_ITEM_FETCH_ALL_API_DESCRIPTION,
   STOCK_ITEM_FETCH_ALL_SUCCESS_API_RESPONSE,
   STOCK_ITEM_FETCH_ALL_VALIDATION_API_RESPONSE,
   STOCK_ITEM_FETCH_ALL_UNAUTHORIZED_API_RESPONSE,
 } from "./swagger/stockItemFetchAll.swagger";
+import { AuthenticatedRequest } from "../auth/interfaces/request.inerface";
 
 @ApiTags("Stocks")
 @Controller("api/stocks")
@@ -28,7 +28,7 @@ export class StocksController {
   @ApiResponse(STOCK_ITEM_FETCH_ALL_SUCCESS_API_RESPONSE)
   @ApiResponse(STOCK_ITEM_FETCH_ALL_VALIDATION_API_RESPONSE)
   @ApiResponse(STOCK_ITEM_FETCH_ALL_UNAUTHORIZED_API_RESPONSE)
-  async getAllStocks(@Req() req: { user: JwtPayload }, @Query() query: GetStocksQueryDto) {
+  async getAllStocks(@Req() req: AuthenticatedRequest, @Query() query: GetStocksQueryDto) {
     const userId = req.user.sub;
     const data = await this.StockItemFetchAll.findAll(userId, query);
     return {
