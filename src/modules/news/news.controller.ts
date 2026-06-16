@@ -19,7 +19,7 @@ export class NewsController {
   @ApiOperation({ summary: NEWS_SWAGGER.findAll.summary, description: NEWS_SWAGGER.findAll.description })
   @ApiResponse(NEWS_SWAGGER.findAll.ok)
   async getTimeline(): Promise<CustomResponse<AiNewsTimelineResponseDto>> {
-    const data = await this.newsService.getDailyNewsTimeline();
+    const data = await this.newsService.fetchAiNewsTimeline();
 
     return CustomResponse.success(data, NEWS_SWAGGER.findAll.ok.description);
   }
