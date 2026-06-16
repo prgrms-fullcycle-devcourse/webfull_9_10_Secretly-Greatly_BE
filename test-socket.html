@@ -54,7 +54,7 @@
             }
 
             socket.emit("join_room", {
-                ticker: "NVDA",
+                ticker: "GLOBAL",
             });
 
             console.log("join_room emitted");
@@ -67,7 +67,7 @@
             }
 
             socket.emit("send_message", {
-            ticker: "NVDA",
+            ticker: "GLOBAL",
             message: "안녕하세요",
             });
             console.log("send_message emitted");
