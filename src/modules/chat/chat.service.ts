@@ -6,7 +6,21 @@ import { SendMessageRequestDto } from "./dto/req/send-message.request.dto";
 
 @Injectable()
 export class ChatService {
-  private readonly bannedWords = ["시발", "병신", "개새끼"];
+  private readonly bannedWords = [
+    "시발",
+    "씨발",
+    "ㅅㅂ",
+    "ㅆㅂ",
+    "병신",
+    "ㅂㅅ",
+    "개새끼",
+    "새끼",
+    "지랄",
+    "ㅈㄹ",
+    "좆",
+    "ㅈ같",
+    "꺼져",
+  ];
 
   constructor(private readonly prisma: PrismaService) {}
 
