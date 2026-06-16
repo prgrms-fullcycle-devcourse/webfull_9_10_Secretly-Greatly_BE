@@ -24,7 +24,12 @@ export class ChatGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server;
 
-  private readonly lastMessageAt = new Map<string, number>();
+  private readonly messageHistory = new Map<string, number[]>();
+  private readonly bannedUsers = new Map<string, number>();
+
+  private readonly SPAM_WINDOW_MS = 3000;
+  private readonly SPAM_LIMIT = 5;
+  private readonly BAN_DURATION_MS = 10000;
 
   constructor(
     private readonly authService: AuthService,
@@ -32,24 +37,17 @@ export class ChatGateway implements OnGatewayConnection {
   ) {}
 
   handleConnection(client: Socket) {
-    //console.log("socket connected:", client.id);
-
     const token = client.handshake.auth.token;
 
     if (typeof token !== "string") {
-      //console.log("token missing");
       client.disconnect();
       return;
     }
 
     try {
       const payload = this.authService.verifyAccessToken(token);
-
       client.data.user = payload;
-
-      //console.log("socket user:", client.data.user);
     } catch {
-      //console.log("Invalid access token");
       client.disconnect();
     }
   }
@@ -82,15 +80,34 @@ export class ChatGateway implements OnGatewayConnection {
       }
 
       const now = Date.now();
-      const lastSentAt = this.lastMessageAt.get(user.sub) ?? 0;
+      const bannedUntil = this.bannedUsers.get(user.sub);
 
-      if (now - lastSentAt < 3000) {
+      if (bannedUntil && bannedUntil > now) {
         client.emit("chat_error", {
-          message: "메시지는 3초에 한 번만 보낼 수 있습니다.",
+          message: `채팅 제한 중입니다. ${Math.ceil((bannedUntil - now) / 1000)}초 후 다시 시도해주세요.`,
         });
-
         return;
       }
+
+      if (bannedUntil && bannedUntil <= now) {
+        this.bannedUsers.delete(user.sub);
+      }
+
+      const history = this.messageHistory.get(user.sub) ?? [];
+      const recentMessages = history.filter((time) => now - time < this.SPAM_WINDOW_MS);
+
+      if (recentMessages.length >= this.SPAM_LIMIT) {
+        this.bannedUsers.set(user.sub, now + this.BAN_DURATION_MS);
+        this.messageHistory.delete(user.sub);
+
+        client.emit("chat_error", {
+          message: "도배 감지로 10초간 채팅이 제한되었습니다.",
+        });
+        return;
+      }
+
+      recentMessages.push(now);
+      this.messageHistory.set(user.sub, recentMessages);
 
       const ticker = body?.ticker ?? GLOBAL_TICKER;
 
@@ -98,8 +115,6 @@ export class ChatGateway implements OnGatewayConnection {
         ...body,
         ticker,
       });
-
-      this.lastMessageAt.set(user.sub, now);
 
       this.server.to(`stock:${ticker}`).emit("receive_message", message);
 
