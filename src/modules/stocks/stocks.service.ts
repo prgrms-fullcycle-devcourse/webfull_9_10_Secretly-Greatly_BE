@@ -8,6 +8,7 @@ import { QuoteService } from "../quote/quote.service";
 import { CreateWatchlistRequestDto } from "./dto/req/create-watchlist-request.dto";
 import { AssetEntityNotFoundException } from "../../common/exceptions/asset-entity-not-found.exception";
 import { CreateWatchlistResponseDto } from "./dto/res/create-watchlist-response.dto";
+import { WatchlistCapacityExceededException } from "../../common/exceptions/watchlist-capacity-exceeded.exception";
 
 /**
  * 여러 종목 목록 + 최신 시세 조회 (종목 추가/검색 화면용)
@@ -76,7 +77,7 @@ export class StocksService {
     };
   }
 
-  // 관심 종목 등록 (최대 10개 제한)
+  // 관심 종목 등록 (최대 20개 제한)
   async addStockToWatchlist(userId: string, body: CreateWatchlistRequestDto): Promise<CreateWatchlistResponseDto> {
     this.logger.log(`📥 [Watchlist Engine] 유저 ${userId} - 종목 ID: ${body.stockId} 등록 시도`);
 
@@ -97,8 +98,9 @@ export class StocksService {
       },
     });
 
-    if (currentCount >= 10) {
+    if (currentCount >= 20) {
       this.logger.warn(`⚠️ [Watchlist Capacity Overflow] 유저 ${userId} 가상 디스크 한도(10개) 초과 발생`);
+      throw new WatchlistCapacityExceededException();
     }
 
     const newWatchlist = await this.prisma.watchlist.create({
