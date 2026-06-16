@@ -1,10 +1,13 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { GetStocksQueryDto } from "./dto/getStocksQuery.dto";
 import { StockListDataDto, StockItemDto } from "./dto/stockItem.dto";
 import { MARKET_TO_RESPONSE, RESPONSE_TO_MARKET } from "./stocks.constant";
 import { QuoteService } from "../quote/quote.service";
+import { CreateWatchlistRequestDto } from "./dto/req/create-watchlist-request.dto";
+import { AssetEntityNotFoundException } from "../../common/exceptions/asset-entity-not-found.exception";
+import { CreateWatchlistResponseDto } from "./dto/res/create-watchlist-response.dto";
 
 /**
  * 여러 종목 목록 + 최신 시세 조회 (종목 추가/검색 화면용)
@@ -12,7 +15,9 @@ import { QuoteService } from "../quote/quote.service";
  * 시세(price/change/volume)는 QuoteService 가 캐시 우선 + DB 폴백으로 해결한다.
  */
 @Injectable()
-export class StockItemFetchAll {
+export class StocksService {
+  private readonly logger = new Logger(StocksService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly quoteService: QuoteService,
@@ -68,6 +73,45 @@ export class StockItemFetchAll {
     if (!kw) return {};
     return {
       OR: [{ name: { contains: kw, mode: "insensitive" } }, { code: { contains: kw, mode: "insensitive" } }],
+    };
+  }
+
+  // 관심 종목 등록 (최대 10개 제한)
+  async addStockToWatchlist(userId: string, body: CreateWatchlistRequestDto): Promise<CreateWatchlistResponseDto> {
+    this.logger.log(`📥 [Watchlist Engine] 유저 ${userId} - 종목 ID: ${body.stockId} 등록 시도`);
+
+    const stock = await this.prisma.stock.findUnique({
+      where: {
+        id: body.stockId,
+      },
+    });
+
+    if (!stock) {
+      this.logger.warn(`❌ [Asset Lookup Failed] 존재하지 않는 자산 유입: ${body.stockId}`);
+      throw new AssetEntityNotFoundException(body.stockId);
+    }
+
+    const currentCount = await this.prisma.watchlist.count({
+      where: {
+        userId,
+      },
+    });
+
+    if (currentCount >= 10) {
+      this.logger.warn(`⚠️ [Watchlist Capacity Overflow] 유저 ${userId} 가상 디스크 한도(10개) 초과 발생`);
+    }
+
+    const newWatchlist = await this.prisma.watchlist.create({
+      data: {
+        userId,
+        stockId: body.stockId,
+      },
+    });
+
+    return {
+      watchlistId: newWatchlist.id,
+      stockName: stock.name,
+      totalRegisteredCount: currentCount + 1,
     };
   }
 }
