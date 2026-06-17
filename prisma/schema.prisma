@@ -300,8 +300,10 @@ model Position {
 }
 
 model PositionSimulation {
-  id         Int @id @default(autoincrement())
-  positionId Int @map("position_id")
+  id         Int    @id @default(autoincrement())
+  userId     String @map("user_id") @db.Uuid
+  stockId    Int    @map("stock_id")
+  positionId Int?   @map("position_id")
 
   buyPrice    Decimal @map("buy_price") @db.Decimal(18, 4)
   buyQuantity Decimal @map("buy_quantity") @db.Decimal(18, 8)
@@ -317,7 +319,7 @@ model PositionSimulation {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  position Position? @relation(fields: [positionId], references: [id], onDelete: Cascade)
 
   @@map("position_simulations")
 }
