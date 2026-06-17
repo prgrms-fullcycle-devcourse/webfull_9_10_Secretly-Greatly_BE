@@ -29,7 +29,7 @@ export class DomesticPollerService {
       select: { id: true },
     });
 
-    this.logger.log(`틱 폴링 시작: 대상 ${users.length}명`);
+    this.logger.log(`국내 틱 폴링 시작: 대상 ${users.length}명`);
 
     for (const u of users) {
       // 사용자별 순차

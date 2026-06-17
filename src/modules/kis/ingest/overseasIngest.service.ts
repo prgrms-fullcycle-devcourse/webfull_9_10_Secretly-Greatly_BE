@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Prisma, Exchange } from "@prisma/client";
+import { Prisma, Exchange, Stock } from "@prisma/client";
 import { PrismaService } from "../../../common/prisma/prisma.service";
 import { KisOverseasPriceService, OverseasSymbolInput } from "../price/kisOverseasPrice.service";
 import { KisOverseasMultiPriceItem } from "../price/dto/kisOverseasPrice.dto";
@@ -20,28 +20,43 @@ export class OverseasIngestService {
   ) {}
 
   async ingestUserWatchlist(userId: string) {
-    const items = await this.prisma.withUser(userId, (tx) =>
-      tx.watchlist.findMany({
-        where: { userId, stock: { exchange: { in: OVERSEAS_EXCHANGES } } },
-        include: { stock: true },
-      }),
+    // watchlist + position 의 종목을 합쳐서(중복 제거) 수집
+    const [watchItems, positionItems] = await this.prisma.withUser(userId, (tx) =>
+      Promise.all([
+        tx.watchlist.findMany({
+          where: { userId, stock: { exchange: { in: OVERSEAS_EXCHANGES } } },
+          include: { stock: true },
+        }),
+        tx.position.findMany({
+          where: { userId, stock: { exchange: { in: OVERSEAS_EXCHANGES } } },
+          include: { stock: true },
+        }),
+      ]),
     );
-    if (items.length === 0) {
+
+    // stockId 기준으로 종목 중복 제거 (watchlist ∪ position)
+    const stockById = new Map<number, Stock>();
+    for (const it of watchItems) stockById.set(it.stockId, it.stock);
+    for (const it of positionItems) stockById.set(it.stockId, it.stock);
+
+    if (stockById.size === 0) {
       this.logger.log(`user=${userId} 해외 종목 없음.`);
       return;
     }
 
+    const stocks = [...stockById.values()];
+
     // excd(거래소 코드):code(종목 코드) key 생성 및 매핑 - 해외 종목 코드의 중복 가능성 대비
     const excdSymbToStockId = new Map<string, number>();
-    for (const it of items) {
-      const excd = EXCHANGE_TO_EXCD[it.stock.exchange];
+    for (const s of stocks) {
+      const excd = EXCHANGE_TO_EXCD[s.exchange];
       if (!excd) continue; // 매핑 없는 거래소는 제외
-      excdSymbToStockId.set(`${excd}:${it.stock.code}`, it.stockId);
+      excdSymbToStockId.set(`${excd}:${s.code}`, s.id);
     }
 
-    const symbols: OverseasSymbolInput[] = items.map((it) => ({
-      code: it.stock.code,
-      exchange: it.stock.exchange,
+    const symbols: OverseasSymbolInput[] = stocks.map((s) => ({
+      code: s.code,
+      exchange: s.exchange,
     }));
 
     const quotes: KisOverseasMultiPriceItem[] = await this.kisOverseasPriceService.fetchMultiPrice(userId, symbols);
