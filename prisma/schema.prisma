@@ -38,6 +38,7 @@ enum Market {
   KR
   US
   CRYPTO
+  INDEX
 }
 
 enum Exchange {
@@ -46,6 +47,7 @@ enum Exchange {
   NYSE
   BINANCE
   UPBIT
+  NONE
 }
 
 enum ExchangeTimezone {
