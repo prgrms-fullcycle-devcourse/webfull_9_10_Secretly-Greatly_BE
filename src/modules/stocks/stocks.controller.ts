@@ -14,10 +14,11 @@ import { CreateWatchlistRequestDto } from "./dto/req/create-watchlist-request.dt
 import { CustomResponse } from "../../common/responses/custom.response";
 import { CreateWatchlistResponseDto } from "./dto/res/create-watchlist-response.dto";
 import { StocksService } from "./stocks.service";
+import { OptionalJwtAuthGuard } from "../auth/guards/optional-jwt-auth.guard";
+import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
 
 @ApiTags("Stocks")
 @Controller("api/stocks")
-@UseGuards(JwtAuthGuard)
 export class StocksController {
   constructor(private readonly stockService: StocksService) {}
 
@@ -25,6 +26,7 @@ export class StocksController {
   @HttpCode(HttpStatus.OK)
   @Header("Content-Type", "application/json")
   @ApiCookieAuth("accessToken")
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary: "전체 종목 목록 조회 (종목 추가/검색용)",
     description: STOCK_ITEM_FETCH_ALL_API_DESCRIPTION,
@@ -32,8 +34,8 @@ export class StocksController {
   @ApiResponse(STOCK_ITEM_FETCH_ALL_SUCCESS_API_RESPONSE)
   @ApiResponse(STOCK_ITEM_FETCH_ALL_VALIDATION_API_RESPONSE)
   @ApiResponse(STOCK_ITEM_FETCH_ALL_UNAUTHORIZED_API_RESPONSE)
-  async getAllStocks(@Req() req: AuthenticatedRequest, @Query() query: GetStocksQueryDto) {
-    const userId = req.user.sub;
+  async getAllStocks(@Req() req: { user?: JwtPayload }, @Query() query: GetStocksQueryDto) {
+    const userId = req.user?.sub ?? null; // 비로그인이면 null
     const data = await this.stockService.findAll(userId, query);
     return {
       message: "조건에 부합하는 전체 종목 데이터 조회가 완료되었습니다.",
