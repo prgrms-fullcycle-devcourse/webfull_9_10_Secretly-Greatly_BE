@@ -5,6 +5,7 @@ export const MARKET_TO_RESPONSE: Record<Market, string> = {
   KR: "DOMESTIC",
   US: "OVERSEAS",
   CRYPTO: "COIN",
+  INDEX: "INDEX",
 };
 
 // API 요청 필터(DOMESTIC/OVERSEAS/COIN) -> DB Enum(KR/US/CRYPTO)

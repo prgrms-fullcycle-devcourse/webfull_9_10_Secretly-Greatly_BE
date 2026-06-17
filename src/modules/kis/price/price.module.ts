@@ -3,10 +3,11 @@ import { HttpModule } from "@nestjs/axios";
 import { KisAuthModule } from "../kisAuth/kisAuth.module";
 import { KisDomesticPriceService } from "./kisDomesticPrice.service";
 import { KisOverseasPriceService } from "./kisOverseasPrice.service";
+import { KisIndexPriceService } from "./kisIndexPrice.service";
 
 @Module({
   imports: [HttpModule, KisAuthModule],
-  providers: [KisDomesticPriceService, KisOverseasPriceService],
-  exports: [KisDomesticPriceService, KisOverseasPriceService],
+  providers: [KisDomesticPriceService, KisOverseasPriceService, KisIndexPriceService],
+  exports: [KisDomesticPriceService, KisOverseasPriceService, KisIndexPriceService],
 })
 export class PriceModule {}
