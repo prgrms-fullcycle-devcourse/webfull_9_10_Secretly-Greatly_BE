@@ -40,11 +40,13 @@ export class StocksService {
       return { sortedBy: sort, totalCount: 0, items: [] };
     }
 
-    // 시세는 QuoteService 에 위임 (캐시 우선, 미스는 DB 폴백)
-    const quotes = await this.quoteService.getLatestQuotes(
-      userId,
-      stocks.map((s) => s.id),
-    );
+    // userId 없으면(비로그인) 시세 조회 건너뜀 → 가격 전부 null
+    const quotes = userId
+      ? await this.quoteService.getLatestQuotes(
+          userId,
+          stocks.map((s) => s.id),
+        )
+      : new Map();
 
     // 응답 조립 (시세 없는 종목은 null)
     const items: StockItemDto[] = stocks.map((s) => {
