@@ -2,7 +2,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { PrismaService } from "../../../common/prisma/prisma.service";
-import { TickIngestService } from "./tickIngest.service";
+import { DomesticIngestService } from "./domesticIngest.service";
 
 @Injectable()
 export class DomesticPollerService {
@@ -10,7 +10,7 @@ export class DomesticPollerService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly ingest: TickIngestService,
+    private readonly ingest: DomesticIngestService,
   ) {}
 
   // 장중(평일 09~15시) 30초마다 폴링

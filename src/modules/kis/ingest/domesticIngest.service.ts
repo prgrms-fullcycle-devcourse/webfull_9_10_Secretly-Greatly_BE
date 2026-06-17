@@ -9,8 +9,8 @@ import { Prisma, Exchange, Stock } from "@prisma/client";
 const DOMESTIC_EXCHANGES = [Exchange.KRX];
 
 @Injectable()
-export class TickIngestService {
-  private readonly logger = new Logger(TickIngestService.name);
+export class DomesticIngestService {
+  private readonly logger = new Logger(DomesticIngestService.name);
 
   constructor(
     private readonly prisma: PrismaService,
