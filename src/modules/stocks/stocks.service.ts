@@ -30,6 +30,7 @@ export class StocksService {
     // 종목 마스터 필터 (시장/검색어)
     const stocks = await this.prisma.stock.findMany({
       where: {
+        assetType: { not: "INDEX" },
         ...(market ? { market: RESPONSE_TO_MARKET[market] } : {}),
         ...this.buildKeywordWhere(keyword),
       },
