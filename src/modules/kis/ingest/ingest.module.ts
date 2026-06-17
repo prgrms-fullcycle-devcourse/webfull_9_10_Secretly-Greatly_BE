@@ -6,6 +6,8 @@ import { OverseasIngestService } from "./overseasIngest.service";
 import { OverseasPollerService } from "./overseasPoller.service";
 import { MaintenanceService } from "./maintenance.service";
 import { QuoteModule } from "../../quote/quote.module";
+import { IndexIngestService } from "./indexIngest.service";
+import { IndexPollerService } from "./indexPoller.service";
 
 @Module({
   imports: [PriceModule, QuoteModule],
@@ -15,7 +17,9 @@ import { QuoteModule } from "../../quote/quote.module";
     OverseasIngestService,
     OverseasPollerService,
     MaintenanceService,
+    IndexIngestService,
+    IndexPollerService,
   ],
-  exports: [TickIngestService, OverseasIngestService],
+  exports: [TickIngestService, OverseasIngestService, QuoteModule],
 })
 export class IngestModule {}

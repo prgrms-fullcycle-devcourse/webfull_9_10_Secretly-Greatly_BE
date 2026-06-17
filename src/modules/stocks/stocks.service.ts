@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { GetStocksQueryDto } from "./dto/getStocksQuery.dto";
@@ -8,6 +8,7 @@ import { QuoteService } from "../quote/quote.service";
 import { CreateWatchlistRequestDto } from "./dto/req/create-watchlist-request.dto";
 import { AssetEntityNotFoundException } from "../../common/exceptions/asset-entity-not-found.exception";
 import { CreateWatchlistResponseDto } from "./dto/res/create-watchlist-response.dto";
+import { WatchlistCapacityExceededException } from "../../common/exceptions/watchlist-capacity-exceeded.exception";
 
 /**
  * 여러 종목 목록 + 최신 시세 조회 (종목 추가/검색 화면용)
@@ -29,6 +30,7 @@ export class StocksService {
     // 종목 마스터 필터 (시장/검색어)
     const stocks = await this.prisma.stock.findMany({
       where: {
+        assetType: { not: "INDEX" },
         ...(market ? { market: RESPONSE_TO_MARKET[market] } : {}),
         ...this.buildKeywordWhere(keyword),
       },
@@ -76,7 +78,7 @@ export class StocksService {
     };
   }
 
-  // 관심 종목 등록 (최대 10개 제한)
+  // 관심 종목 등록 (최대 20개 제한)
   async addStockToWatchlist(userId: string, body: CreateWatchlistRequestDto): Promise<CreateWatchlistResponseDto> {
     this.logger.log(`📥 [Watchlist Engine] 유저 ${userId} - 종목 ID: ${body.stockId} 등록 시도`);
 
@@ -90,6 +92,18 @@ export class StocksService {
       this.logger.warn(`❌ [Asset Lookup Failed] 존재하지 않는 자산 유입: ${body.stockId}`);
       throw new AssetEntityNotFoundException(body.stockId);
     }
+    const existingWatchlist = await this.prisma.watchlist.findUnique({
+      where: {
+        userId_stockId: {
+          userId,
+          stockId: body.stockId,
+        },
+      },
+    });
+
+    if (existingWatchlist) {
+      throw new ConflictException("이미 관심 종목에 등록된 종목입니다.");
+    }
 
     const currentCount = await this.prisma.watchlist.count({
       where: {
@@ -97,8 +111,9 @@ export class StocksService {
       },
     });
 
-    if (currentCount >= 10) {
-      this.logger.warn(`⚠️ [Watchlist Capacity Overflow] 유저 ${userId} 가상 디스크 한도(10개) 초과 발생`);
+    if (currentCount >= 20) {
+      this.logger.warn(`⚠️ [Watchlist Capacity Overflow] 유저 ${userId} 가상 디스크 한도(20개) 초과 발생`);
+      throw new WatchlistCapacityExceededException();
     }
 
     const newWatchlist = await this.prisma.watchlist.create({

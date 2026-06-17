@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { StockSimulationRequestDto } from "./dto/req/stock-simulation-request.dto";
 import { StockSimulationResponseDto } from "./dto/res/stock-simulation-response.dto";
-import { PositionNotFoundException } from "../../common/exceptions/position-not-found.exception";
+import { AssetCodeNotFoundException } from "../../common/exceptions/asset-code-not-found.exception";
 import { formatOptimizerLog } from "../../common/utils/formatter.util";
 
 @Injectable()
@@ -15,6 +15,12 @@ export class SimulationService {
   ): Promise<StockSimulationResponseDto> {
     const { code, currentAvgPrice, currentQuantity, purchasePrice, purchaseQuantity } = body;
 
+    const stock = await this.prisma.stock.findFirst({
+      where: { code: code },
+    });
+    if (!stock) {
+      throw new AssetCodeNotFoundException(code);
+    }
     const currentPrice = purchasePrice;
 
     // --- 7대 필수 자산 지표 도메인 연산 시작 ---
@@ -47,13 +53,11 @@ export class SimulationService {
       },
     });
 
-    if (!position) {
-      throw new PositionNotFoundException(code);
-    }
-
     await this.prisma.positionSimulation.create({
       data: {
-        positionId: position.id,
+        userId: userId,
+        stockId: stock.id,
+        positionId: position?.id ?? null,
         buyPrice: purchasePrice,
         buyQuantity: purchaseQuantity,
         currentPrice: currentPrice,
