@@ -14,6 +14,7 @@
     
     <script>
         let socket;
+        let streamSocket;
 
         function connectSocket() {
             const token = document
@@ -47,6 +48,39 @@
             });
         }
 
+        function connectStream() {
+            const token = document
+                .getElementById("token")
+                .value
+                .trim()
+                .replace(/^Bearer\s+/i, "")
+                .replace(/;$/, "");
+
+            streamSocket = io(
+                "http://localhost:3001/api/v1/stream",
+                {
+                    transports: ["websocket"],
+                    auth: { token },
+                }
+            );
+
+            streamSocket.on("connect", () => {
+                console.log("stream connected:", streamSocket.id);
+            });
+            
+            streamSocket.onAny((event, ...args) => {
+                console.log("stream event:", event, args);
+            });
+
+            streamSocket.on("terminal_alert", (data) => {
+                console.log("🚨 terminal_alert:", data);
+            });
+
+            streamSocket.on("connect_error", (error) => {
+                console.error("stream error:", error.message);
+            });
+        }
+
         function joinRoom() {
             if (!socket || !socket.connected) {
                 console.error("socket is not connected");
@@ -76,5 +110,6 @@
 
     <button onclick="joinRoom()">채팅방 입장</button>
     <button onclick="sendMessage()">메시지 보내기</button>
+    <button onclick="connectStream()">Stream Connect</button>
   </body>
 </html>
