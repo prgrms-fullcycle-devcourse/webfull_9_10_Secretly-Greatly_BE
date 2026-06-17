@@ -207,6 +207,7 @@ model Tick {
   stockId    Int      @map("stock_id")
   capturedAt DateTime @map("captured_at") @db.Timestamptz(6)
   price      Decimal  @db.Decimal(18, 4)
+  priceKrw   Decimal? @map("price_krw") @db.Decimal(18, 4)
   volume     BigInt?
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -225,6 +226,7 @@ model MinuteBar {
   high       Decimal  @db.Decimal(18, 4)
   low        Decimal  @db.Decimal(18, 4)
   close      Decimal  @db.Decimal(18, 4)
+  closeKrw   Decimal? @map("close_krw") @db.Decimal(18, 4)
   volume     BigInt?
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -243,6 +245,7 @@ model DailyBar {
   high      Decimal  @db.Decimal(18, 4)
   low       Decimal  @db.Decimal(18, 4)
   close     Decimal  @db.Decimal(18, 4)
+  closeKrw  Decimal? @map("close_krw") @db.Decimal(18, 4)
   volume    BigInt?
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)

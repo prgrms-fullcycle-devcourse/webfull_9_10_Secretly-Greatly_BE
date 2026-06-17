@@ -5,19 +5,17 @@ import { QuoteCacheService } from "./quoteCache.service";
 import { CachedQuote } from "./quoteCache.constant";
 
 /**
- * 적재된 틱 1건
+ * 적재된 틱 1건 + 원화환산가
+ * priceKrw: 미장은 t_xprc(원환산당일가격), 국장은 price 와 동일(원화) 또는 null
  */
 export interface IngestedQuote {
   stockId: number;
   price: Prisma.Decimal | string | number;
+  priceKrw?: Prisma.Decimal | string | number | null;
   volume: bigint | null;
   change: number;
 }
 
-/**
- * 시세 도메인 서비스
- * - 캐시(QuoteCacheService)와 DB(Prisma)를 조율
- */
 @Injectable()
 export class QuoteService {
   constructor(
@@ -25,7 +23,7 @@ export class QuoteService {
     private readonly cache: QuoteCacheService,
   ) {}
 
-  /** 적재된 틱 + 등락률로 최신 시세 캐시 갱신. 국장/미장 ingest 가 틱 적재 직후 호출. */
+  /** 적재된 틱 + 등락률로 최신 시세 캐시 갱신 */
   async cacheIngestedQuotes(userId: string, quotes: IngestedQuote[], capturedAt: Date): Promise<void> {
     if (quotes.length === 0) return;
 
@@ -33,6 +31,7 @@ export class QuoteService {
       stockId: q.stockId,
       quote: {
         price: Number(q.price),
+        priceKrw: q.priceKrw != null ? Number(q.priceKrw) : null, // 원화환산가
         volume: q.volume != null ? Number(q.volume) : 0,
         change: q.change,
         capturedAt: capturedAt.toISOString(),
@@ -42,10 +41,7 @@ export class QuoteService {
     await this.cache.setQuotes(userId, entries);
   }
 
-  /**
-   * 목록 조회용: 종목별 최신 시세 (캐시 우선 → 미스만 ticks 폴백).
-   * @returns stockId → CachedQuote. 캐시에도 틱에도 없으면 맵에 없음(호출측 0 처리).
-   */
+  /** 목록 조회용: 종목별 최신 시세 (캐시 우선 → 미스만 ticks 폴백). */
   async getLatestQuotes(userId: string, stockIds: number[]): Promise<Map<number, CachedQuote>> {
     const cached = await this.cache.getQuotes(userId, stockIds);
     const missIds = stockIds.filter((id) => !cached.has(id));
@@ -57,17 +53,17 @@ export class QuoteService {
   }
 
   /**
-   * 캐시 미스 폴백: ticks 최신 1건으로 price/volume 채움.
-   * 단, 등락률은 틱에 없으므로 폴백 경로에서는 change=0.
-   * (등락률은 한투 응답값이라 캐시에만 있음. 폴백은 캐시 만료 직후 등
-   *  드문 경우이고, 다음 폴링(최대 30초)에 등락률 포함 값으로 다시 채워진다.)
+   * 캐시 미스 폴백: ticks 최신 1건으로 price/priceKrw/volume 채움
+   * 등락률은 틱에 없어 폴백 경로에서는 change=0 (다음 폴링에 갱신)
    */
   private async fetchQuotesFromDb(userId: string, stockIds: number[]): Promise<Map<number, CachedQuote>> {
     const rows = await this.prisma.withUser(
       userId,
       (tx) =>
-        tx.$queryRaw<{ stock_id: number; price: Prisma.Decimal | null; volume: bigint | null }[]>`
-        SELECT DISTINCT ON (stock_id) stock_id, price, volume
+        tx.$queryRaw<
+          { stock_id: number; price: Prisma.Decimal | null; price_krw: Prisma.Decimal | null; volume: bigint | null }[]
+        >`
+        SELECT DISTINCT ON (stock_id) stock_id, price, price_krw, volume
         FROM ticks
         WHERE user_id = ${userId}::uuid
           AND stock_id IN (${Prisma.join(stockIds)})
@@ -79,8 +75,9 @@ export class QuoteService {
     for (const r of rows) {
       map.set(r.stock_id, {
         price: r.price != null ? Number(r.price) : 0,
+        priceKrw: r.price_krw != null ? Number(r.price_krw) : null,
         volume: r.volume != null ? Number(r.volume) : 0,
-        change: null,
+        change: 0,
         capturedAt: new Date().toISOString(),
       });
     }

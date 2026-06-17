@@ -3,6 +3,7 @@ export interface KisOverseasMultiPriceItem {
   symb: string; // 종목코드
   knam: string; // 종목명(로그용)
   last: string; // 현재가
+  t_xprc: string; // 원화환산가
   rate: string; // 등락율
   tvol: string; // 거래량
 }

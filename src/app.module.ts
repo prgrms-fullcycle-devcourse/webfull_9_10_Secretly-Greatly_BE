@@ -13,6 +13,7 @@ import { AuthPasswordsModule } from "./modules/auth/passwords/auth-passwords.mod
 import { SimulationModule } from "./modules/simulation/simulation.module";
 import { NewsModule } from "./modules/news/news.module";
 import { PositionsModule } from "./modules/positions/positions.module";
+import { StreamModule } from "./modules/stream/stream.module";
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { PositionsModule } from "./modules/positions/positions.module";
     SimulationModule,
     NewsModule,
     PositionsModule,
+    StreamModule,
   ],
   providers: [],
   controllers: [AppController],
