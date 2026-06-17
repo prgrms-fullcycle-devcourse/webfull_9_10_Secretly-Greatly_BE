@@ -4,6 +4,7 @@ import { PrismaService } from "../../../common/prisma/prisma.service";
 import { KisDomesticPriceService } from "../price/kisDomesticPrice.service";
 import { KisDomesticMultiPriceItem } from "../price/dto/kisDomesticPrice.dto";
 import { QuoteService, IngestedQuote } from "../../quote/quote.service";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class TickIngestService {
@@ -44,7 +45,14 @@ export class TickIngestService {
     const skipped: { code: string; name: string }[] = [];
 
     // 틱 적재용 행 + 캐시용 배열을 함께 구성
-    const rows: { userId: string; stockId: number; capturedAt: Date; price: string; volume: bigint }[] = [];
+    const rows: {
+      userId: string;
+      stockId: number;
+      capturedAt: Date;
+      price: Prisma.Decimal;
+      priceKrw: Prisma.Decimal | null; // ← 추가
+      volume: bigint;
+    }[] = [];
     const cacheQuotes: IngestedQuote[] = [];
 
     for (const q of quotes) {
@@ -58,10 +66,12 @@ export class TickIngestService {
       }
 
       const volume = BigInt(q.acml_vol || "0");
-      rows.push({ userId, stockId, capturedAt, price: q.inter2_prpr, volume });
+      const price = new Prisma.Decimal(q.inter2_prpr);
+      rows.push({ userId, stockId, capturedAt, price, priceKrw: price, volume });
       cacheQuotes.push({
         stockId,
-        price: q.inter2_prpr, // 현재가
+        price,
+        priceKrw: price,
         volume,
         change: Number(q.prdy_ctrt), // 전일 대비율(등락률)
       });

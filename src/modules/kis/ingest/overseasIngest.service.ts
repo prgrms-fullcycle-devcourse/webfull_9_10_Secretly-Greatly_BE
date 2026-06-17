@@ -49,7 +49,14 @@ export class OverseasIngestService {
     const capturedAt = new Date();
     const skipped: { code: string; name: string }[] = [];
 
-    const rows: { userId: string; stockId: number; capturedAt: Date; price: Prisma.Decimal; volume: bigint }[] = [];
+    const rows: {
+      userId: string;
+      stockId: number;
+      capturedAt: Date;
+      price: Prisma.Decimal;
+      priceKrw: Prisma.Decimal | null;
+      volume: bigint;
+    }[] = [];
     const cacheQuotes: IngestedQuote[] = [];
 
     for (const q of quotes) {
@@ -62,12 +69,15 @@ export class OverseasIngestService {
         continue;
       }
 
-      const price = new Prisma.Decimal(q.last);
+      const price = new Prisma.Decimal(q.last); // 현재가(달러)
+      const priceKrw = q.t_xprc && Number(q.t_xprc) > 0 ? new Prisma.Decimal(q.t_xprc) : null; // 원화환산가
       const volume = BigInt(q.tvol || "0");
-      rows.push({ userId, stockId, capturedAt, price, volume });
+
+      rows.push({ userId, stockId, capturedAt, price, priceKrw, volume });
       cacheQuotes.push({
         stockId,
-        price, // 현재가
+        price, // 현재가(달러)
+        priceKrw, // 원화환산가
         volume,
         change: Number(q.rate), // 등락율
       });

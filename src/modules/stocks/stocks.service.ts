@@ -13,7 +13,8 @@ import { WatchlistCapacityExceededException } from "../../common/exceptions/watc
 /**
  * 여러 종목 목록 + 최신 시세 조회 (종목 추가/검색 화면용)
  *
- * 시세(price/change/volume)는 QuoteService 가 캐시 우선 + DB 폴백으로 해결한다.
+ * 시세(price/priceKrw/change/volume)는 QuoteService 가 캐시 우선 + DB 폴백으로 해결한다.
+ * priceKrw: 원화 환산가 (미장은 KIS t_xprc, 국장은 price 와 동일). 환산값 없으면 null.
  */
 @Injectable()
 export class StocksService {
@@ -27,7 +28,7 @@ export class StocksService {
   async findAll(userId: string, query: GetStocksQueryDto): Promise<StockListDataDto> {
     const { sort = "change", order = "desc", market, keyword } = query;
 
-    // 종목 마스터 필터 (시장/검색어)
+    // 종목 마스터 필터 (지표 제외, 시장/검색어)
     const stocks = await this.prisma.stock.findMany({
       where: {
         assetType: { not: "INDEX" },
@@ -53,6 +54,7 @@ export class StocksService {
         code: s.code,
         name: s.name,
         price: q?.price ?? null,
+        priceKrw: q?.priceKrw ?? null, // 원화 환산가 (미장 t_xprc / 국장 price / 없으면 null)
         change: q?.change ?? null,
         volume: q?.volume ?? null,
         market: MARKET_TO_RESPONSE[s.market],
@@ -60,8 +62,16 @@ export class StocksService {
     });
 
     // 파생값(price/change/volume) 메모리 정렬
+    // 시세가 없는(null) 종목은 항상 뒤로 보낸다(정렬 방향과 무관)
     const dir = order === "asc" ? 1 : -1;
-    items.sort((a, b) => (a[sort] - b[sort]) * dir);
+    items.sort((a, b) => {
+      const av = a[sort];
+      const bv = b[sort];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1; // a 를 뒤로
+      if (bv == null) return -1; // b 를 뒤로
+      return (av - bv) * dir;
+    });
 
     return { sortedBy: sort, totalCount: items.length, items };
   }
@@ -100,7 +110,7 @@ export class StocksService {
     });
 
     if (currentCount >= 20) {
-      this.logger.warn(`⚠️ [Watchlist Capacity Overflow] 유저 ${userId} 가상 디스크 한도(10개) 초과 발생`);
+      this.logger.warn(`⚠️ [Watchlist Capacity Overflow] 유저 ${userId} 가상 디스크 한도(20개) 초과 발생`);
       throw new WatchlistCapacityExceededException();
     }
 

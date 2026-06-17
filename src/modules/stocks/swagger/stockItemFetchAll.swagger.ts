@@ -16,7 +16,8 @@ export const STOCK_ITEM_FETCH_ALL_SUCCESS_RESPONSE = {
         stockId: 33,
         code: "NVDA",
         name: "NVIDIA",
-        price: 920.11,
+        price: 920.11, // 현지 통화(달러)
+        priceKrw: 1196143, // 원화 환산가(t_xprc)
         change: 4.25,
         volume: 4219500,
         market: "OVERSEAS",
@@ -25,7 +26,8 @@ export const STOCK_ITEM_FETCH_ALL_SUCCESS_RESPONSE = {
         stockId: 1,
         code: "005930",
         name: "삼성전자",
-        price: 73500,
+        price: 73500, // 국장은 원화
+        priceKrw: 73500, // 국장은 price 와 동일
         change: -0.85,
         volume: 12450000,
         market: "DOMESTIC",
@@ -34,7 +36,8 @@ export const STOCK_ITEM_FETCH_ALL_SUCCESS_RESPONSE = {
         stockId: 51,
         code: "KRW-BTC",
         name: "비트코인",
-        price: 98500000,
+        price: 98500000, // 원화 마켓
+        priceKrw: 98500000, // price 와 동일
         change: 1.14,
         volume: 8540,
         market: "COIN",
@@ -43,7 +46,6 @@ export const STOCK_ITEM_FETCH_ALL_SUCCESS_RESPONSE = {
   },
   error: null,
 };
-
 export const STOCK_ITEM_FETCH_ALL_SUCCESS_API_RESPONSE = {
   status: 200,
   description: "조건별 전체 종목 목록 조회 성공",
