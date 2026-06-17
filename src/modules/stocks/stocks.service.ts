@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { GetStocksQueryDto } from "./dto/getStocksQuery.dto";
@@ -92,6 +92,18 @@ export class StocksService {
       this.logger.warn(`❌ [Asset Lookup Failed] 존재하지 않는 자산 유입: ${body.stockId}`);
       throw new AssetEntityNotFoundException(body.stockId);
     }
+    const existingWatchlist = await this.prisma.watchlist.findUnique({
+      where: {
+        userId_stockId: {
+          userId,
+          stockId: body.stockId,
+        },
+      },
+    });
+
+    if (existingWatchlist) {
+      throw new ConflictException("이미 관심 종목에 등록된 종목입니다.");
+    }
 
     const currentCount = await this.prisma.watchlist.count({
       where: {
@@ -100,7 +112,7 @@ export class StocksService {
     });
 
     if (currentCount >= 20) {
-      this.logger.warn(`⚠️ [Watchlist Capacity Overflow] 유저 ${userId} 가상 디스크 한도(10개) 초과 발생`);
+      this.logger.warn(`⚠️ [Watchlist Capacity Overflow] 유저 ${userId} 가상 디스크 한도(20개) 초과 발생`);
       throw new WatchlistCapacityExceededException();
     }
 

@@ -12,6 +12,7 @@ import { CryptoModule } from "./common/crypto/crypto.module";
 import { AuthPasswordsModule } from "./modules/auth/passwords/auth-passwords.module";
 import { SimulationModule } from "./modules/simulation/simulation.module";
 import { NewsModule } from "./modules/news/news.module";
+import { PositionsModule } from "./modules/positions/positions.module";
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { NewsModule } from "./modules/news/news.module";
     AuthPasswordsModule,
     SimulationModule,
     NewsModule,
+    PositionsModule,
   ],
   providers: [],
   controllers: [AppController],
