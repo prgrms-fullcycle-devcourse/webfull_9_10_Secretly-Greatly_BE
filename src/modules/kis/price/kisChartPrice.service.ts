@@ -1,6 +1,8 @@
 import { BadGatewayException, ForbiddenException, Injectable, Logger } from "@nestjs/common";
 import { HttpService } from "@nestjs/axios";
 import { ConfigService } from "@nestjs/config";
+import { InjectRedis } from "@nestjs-modules/ioredis";
+import Redis from "ioredis";
 import { firstValueFrom } from "rxjs";
 import { PrismaService } from "../../../common/prisma/prisma.service";
 import { CryptoService } from "../../../common/crypto/crypto.service";
@@ -33,6 +35,9 @@ export class KisChartPriceService {
   private readonly logger = new Logger(KisChartPriceService.name);
 
   constructor(
+    @InjectRedis()
+    private readonly redis: Redis,
+
     private readonly http: HttpService,
     private readonly config: ConfigService,
     private readonly auth: KisAuthService,
@@ -46,6 +51,13 @@ export class KisChartPriceService {
     interval: CandleInterval,
     limit: number,
   ): Promise<CandleDto[]> {
+    const cacheKey = this.candleCacheKey("DOMESTIC", code, interval, limit);
+    const cached = await this.getCachedCandles(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
     const { token, appKey, appSecret, base } = await this.getKisAuthContext(userId);
     const { from, to } = this.getDateRange(interval, limit);
 
@@ -69,7 +81,7 @@ export class KisChartPriceService {
       throw new BadGatewayException(`KIS 국내 캔들 조회 오류 - ${data.msg1}`);
     }
 
-    return (data.output2 ?? [])
+    const candles = (data.output2 ?? [])
       .map((item) => ({
         time: this.yyyymmddToEpochSeconds(item.stck_bsop_date),
         open: Number(item.stck_oprc),
@@ -80,6 +92,10 @@ export class KisChartPriceService {
       }))
       .sort((a, b) => a.time - b.time)
       .slice(-limit);
+
+    await this.setCachedCandles(cacheKey, interval, candles);
+
+    return candles;
   }
 
   async fetchOverseasCandles(
@@ -89,6 +105,13 @@ export class KisChartPriceService {
     interval: CandleInterval,
     limit: number,
   ): Promise<CandleDto[]> {
+    const cacheKey = this.candleCacheKey(exchange, code, interval, limit);
+    const cached = await this.getCachedCandles(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
     const { token, appKey, appSecret, base } = await this.getKisAuthContext(userId);
     const excd = EXCHANGE_TO_EXCD[exchange as keyof typeof EXCHANGE_TO_EXCD];
 
@@ -119,7 +142,7 @@ export class KisChartPriceService {
       throw new BadGatewayException(`KIS 해외 캔들 조회 오류 - ${data.msg1}`);
     }
 
-    return (data.output2 ?? [])
+    const candles = (data.output2 ?? [])
       .map((item) => ({
         time: this.yyyymmddToEpochSeconds(item.xymd),
         open: Number(item.open),
@@ -130,6 +153,10 @@ export class KisChartPriceService {
       }))
       .sort((a, b) => a.time - b.time)
       .slice(-limit);
+
+    await this.setCachedCandles(cacheKey, interval, candles);
+
+    return candles;
   }
 
   private async getKisAuthContext(userId: string) {
@@ -194,5 +221,49 @@ export class KisChartPriceService {
     const dd = Number(value.slice(6, 8));
 
     return Math.floor(Date.UTC(yyyy, mm - 1, dd) / 1000);
+  }
+  private candleCacheKey(market: string, code: string, interval: CandleInterval, limit: number) {
+    return `kis:candles:${market}:${code}:${interval}:${limit}`;
+  }
+
+  private getCandleCacheTtl(interval: CandleInterval) {
+    switch (interval) {
+      case "1d":
+        return 60 * 5;
+
+      case "1wk":
+        return 60 * 30;
+
+      case "1mo":
+        return 60 * 60 * 6;
+
+      default:
+        return 60 * 5;
+    }
+  }
+
+  private async getCachedCandles(cacheKey: string): Promise<CandleDto[] | null> {
+    try {
+      const cached = await this.redis.get(cacheKey);
+
+      if (!cached) {
+        this.logger.log(`[CANDLE CACHE MISS] ${cacheKey}`);
+        return null;
+      }
+
+      this.logger.log(`[CANDLE CACHE HIT] ${cacheKey}`);
+      return JSON.parse(cached) as CandleDto[];
+    } catch (e) {
+      this.logger.warn(`[CANDLE CACHE READ ERROR] ${cacheKey}: ${(e as Error).message}`);
+      return null;
+    }
+  }
+
+  private async setCachedCandles(cacheKey: string, interval: CandleInterval, candles: CandleDto[]): Promise<void> {
+    try {
+      await this.redis.set(cacheKey, JSON.stringify(candles), "EX", this.getCandleCacheTtl(interval));
+    } catch (e) {
+      this.logger.warn(`[CANDLE CACHE WRITE ERROR] ${cacheKey}: ${(e as Error).message}`);
+    }
   }
 }
