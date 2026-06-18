@@ -1,5 +1,6 @@
 export class WatchlistStockItemDto {
   watchlistId: number;
+  stockId: number;
   displayFileName: string;
   ticker: string;
   currentPrice: number;
