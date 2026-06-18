@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger } from "@nestjs/common";
+import { ConflictException, Injectable, Logger, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { GetStocksQueryDto } from "./dto/getStocksQuery.dto";
@@ -9,6 +9,9 @@ import { CreateWatchlistRequestDto } from "./dto/req/create-watchlist-request.dt
 import { AssetEntityNotFoundException } from "../../common/exceptions/asset-entity-not-found.exception";
 import { CreateWatchlistResponseDto } from "./dto/res/create-watchlist-response.dto";
 import { WatchlistCapacityExceededException } from "../../common/exceptions/watchlist-capacity-exceeded.exception";
+import { KisChartPriceService } from "../kis/price/kisChartPrice.service";
+import { GetStockCandlesQueryDto } from "./dto/req/get-stock-candles-query.dto";
+import { CandleDto } from "../kis/price/dto/kisChartPrice.dto";
 
 /**
  * 여러 종목 목록 + 최신 시세 조회 (종목 추가/검색 화면용)
@@ -23,9 +26,10 @@ export class StocksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly quoteService: QuoteService,
+    private readonly kisChartPriceService: KisChartPriceService,
   ) {}
 
-  async findAll(userId: string, query: GetStocksQueryDto): Promise<StockListDataDto> {
+  async findAll(userId: string | null, query: GetStocksQueryDto): Promise<StockListDataDto> {
     const { sort = "change", order = "desc", market, keyword } = query;
 
     // 종목 마스터 필터 (지표 제외, 시장/검색어)
@@ -40,11 +44,13 @@ export class StocksService {
       return { sortedBy: sort, totalCount: 0, items: [] };
     }
 
-    // 시세는 QuoteService 에 위임 (캐시 우선, 미스는 DB 폴백)
-    const quotes = await this.quoteService.getLatestQuotes(
-      userId,
-      stocks.map((s) => s.id),
-    );
+    // userId 없으면(비로그인) 시세 조회 건너뜀 → 가격 전부 null
+    const quotes = userId
+      ? await this.quoteService.getLatestQuotes(
+          userId,
+          stocks.map((s) => s.id),
+        )
+      : new Map();
 
     // 응답 조립 (시세 없는 종목은 null)
     const items: StockItemDto[] = stocks.map((s) => {
@@ -138,5 +144,47 @@ export class StocksService {
       stockName: stock.name,
       totalRegisteredCount: currentCount + 1,
     };
+  }
+  async getCandles(userId: string, stockId: number, query: GetStockCandlesQueryDto): Promise<{ candles: CandleDto[] }> {
+    const stock = await this.prisma.stock.findUnique({
+      where: { id: stockId },
+    });
+
+    if (!stock) {
+      throw new NotFoundException("종목을 찾을 수 없습니다.");
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        kisAppKeyEnc: true,
+        kisAppSecretEnc: true,
+      },
+    });
+
+    if (!user?.kisAppKeyEnc || !user?.kisAppSecretEnc) {
+      throw new ForbiddenException("KIS 연동이 필요합니다.");
+    }
+
+    const interval = query.interval ?? "1d";
+    const limit = query.limit ?? 250;
+
+    let candles: CandleDto[];
+
+    if (stock.market === "KR") {
+      candles = await this.kisChartPriceService.fetchDomesticCandles(userId, stock.code, interval, limit);
+    } else if (stock.market === "US") {
+      candles = await this.kisChartPriceService.fetchOverseasCandles(
+        userId,
+        stock.code,
+        stock.exchange,
+        interval,
+        limit,
+      );
+    } else {
+      return { candles: [] };
+    }
+
+    return { candles };
   }
 }

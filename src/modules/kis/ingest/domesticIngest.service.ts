@@ -1,14 +1,16 @@
-// TODO: tickIngest.service.ts → domesticIngest.service.ts 파일명 변경
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../../common/prisma/prisma.service";
 import { KisDomesticPriceService } from "../price/kisDomesticPrice.service";
 import { KisDomesticMultiPriceItem } from "../price/dto/kisDomesticPrice.dto";
 import { QuoteService, IngestedQuote } from "../../quote/quote.service";
-import { Prisma } from "@prisma/client";
+import { Prisma, Exchange, Stock } from "@prisma/client";
+
+// 국장(domestic) 수집 대상 거래소
+const DOMESTIC_EXCHANGES = [Exchange.KRX];
 
 @Injectable()
-export class TickIngestService {
-  private readonly logger = new Logger(TickIngestService.name);
+export class DomesticIngestService {
+  private readonly logger = new Logger(DomesticIngestService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -17,24 +19,38 @@ export class TickIngestService {
   ) {}
 
   async ingestUserWatchlist(userId: string) {
-    const items = await this.prisma.withUser(userId, (tx) =>
-      // 현재 watchlist는 KIS Key가 있어야 한다는 전제가 있음.
-      tx.watchlist.findMany({
-        where: { userId },
-        include: { stock: true },
-      }),
+    // watchlist + position 의 종목을 합쳐서(중복 제거) 수집
+    const [watchItems, positionItems] = await this.prisma.withUser(userId, (tx) =>
+      Promise.all([
+        tx.watchlist.findMany({
+          where: { userId, stock: { exchange: { in: DOMESTIC_EXCHANGES } } },
+          include: { stock: true },
+        }),
+        tx.position.findMany({
+          where: { userId, stock: { exchange: { in: DOMESTIC_EXCHANGES } } },
+          include: { stock: true },
+        }),
+      ]),
     );
-    if (items.length === 0) return;
+
+    // stockId 기준으로 종목 중복 제거 (watchlist ∪ position)
+    const stockById = new Map<number, Stock>();
+    for (const it of watchItems) stockById.set(it.stockId, it.stock);
+    for (const it of positionItems) stockById.set(it.stockId, it.stock);
+
+    if (stockById.size === 0) return;
+
+    const stocks = [...stockById.values()];
 
     // 종목코드 → stockId 매핑
     const codeToStockId = new Map<string, number>();
-    for (const it of items) codeToStockId.set(it.stock.code, it.stockId);
+    for (const s of stocks) codeToStockId.set(s.code, s.id);
 
     let quotes: KisDomesticMultiPriceItem[];
     try {
       quotes = await this.kisDomesticPriceService.fetchMultiPrice(
         userId,
-        items.map((it) => ({ code: it.stock.code, marketDivCode: "J" })),
+        stocks.map((s) => ({ code: s.code, marketDivCode: "J" })),
       );
     } catch (e) {
       this.logger.warn(`user=${userId} 시세 조회 실패: ${(e as Error).message}`);
@@ -44,13 +60,12 @@ export class TickIngestService {
     const capturedAt = new Date();
     const skipped: { code: string; name: string }[] = [];
 
-    // 틱 적재용 행 + 캐시용 배열을 함께 구성
     const rows: {
       userId: string;
       stockId: number;
       capturedAt: Date;
       price: Prisma.Decimal;
-      priceKrw: Prisma.Decimal | null; // ← 추가
+      priceKrw: Prisma.Decimal | null;
       volume: bigint;
     }[] = [];
     const cacheQuotes: IngestedQuote[] = [];
@@ -87,6 +102,6 @@ export class TickIngestService {
 
     await this.quoteService.cacheIngestedQuotes(userId, cacheQuotes, capturedAt);
 
-    this.logger.log(`user=${userId} 틱 ${rows.length}건 적재`);
+    this.logger.log(`user=${userId} 국내 틱 ${rows.length}건 적재`);
   }
 }

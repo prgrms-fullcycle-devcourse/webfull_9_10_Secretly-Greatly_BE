@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { PriceModule } from "../price/price.module";
-import { TickIngestService } from "./tickIngest.service";
+import { DomesticIngestService } from "./domesticIngest.service";
 import { DomesticPollerService } from "./domesticPoller.service";
 import { OverseasIngestService } from "./overseasIngest.service";
 import { OverseasPollerService } from "./overseasPoller.service";
@@ -12,7 +12,7 @@ import { IndexPollerService } from "./indexPoller.service";
 @Module({
   imports: [PriceModule, QuoteModule],
   providers: [
-    TickIngestService,
+    DomesticIngestService,
     DomesticPollerService,
     OverseasIngestService,
     OverseasPollerService,
@@ -20,6 +20,6 @@ import { IndexPollerService } from "./indexPoller.service";
     IndexIngestService,
     IndexPollerService,
   ],
-  exports: [TickIngestService, OverseasIngestService, QuoteModule],
+  exports: [DomesticIngestService, OverseasIngestService, QuoteModule],
 })
 export class IngestModule {}
