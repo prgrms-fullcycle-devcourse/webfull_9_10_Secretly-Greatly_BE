@@ -55,16 +55,6 @@ enum ExchangeTimezone {
   AMERICA_NEW_YORK @map("America/New_York")
 }
 
-enum IndicatorType {
-  KOSPI
-  NASDAQ
-  NASDAQ_FUTURE
-  USD_KRW
-  US_10Y_BOND
-  VIX_INDEX
-  BTC_USDT
-}
-
 enum Country {
   US
   KR
@@ -254,17 +244,6 @@ model DailyBar {
   @@id([userId, stockId, tradeDate])
   @@index([userId, stockId, tradeDate(sort: Desc)], map: "daily_bars_user_stock_td")
   @@map("daily_bars")
-}
-
-model MarketIndicator {
-  id            Int           @id @default(autoincrement())
-  indicatorType IndicatorType @map("indicator_type")
-  value         Decimal       @db.Decimal(18, 4)
-  changeRate    Decimal?      @map("change_rate") @db.Decimal(8, 4)
-  recordedAt    DateTime      @default(now()) @map("recorded_at")
-
-  @@index([indicatorType, recordedAt])
-  @@map("market_indicators")
 }
 
 model EconomicEvent {
