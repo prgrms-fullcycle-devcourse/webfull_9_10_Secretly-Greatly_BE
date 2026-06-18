@@ -1,6 +1,6 @@
 import { ApiResponseOptions } from "@nestjs/swagger";
 import { HttpStatus } from "@nestjs/common";
-import { StockSimulationResponseDto } from "../../simulation/dto/res/stock-simulation-response.dto";
+import { StockSimulationResponseDto } from "../dto/res/stock-simulation-response.dto";
 
 // 🟢 200 OK - 시뮬레이션 성공 연산 성공
 export const SIMULATION_SUCCESS_RESPONSE: ApiResponseOptions = {
