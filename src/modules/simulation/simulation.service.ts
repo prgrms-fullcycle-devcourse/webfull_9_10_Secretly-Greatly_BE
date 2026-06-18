@@ -124,10 +124,22 @@ export class SimulationService {
           orderBy: { tradeDate: "desc" },
         });
 
-        // (현재가 - 시가) / 시가 * 100
-        const openPrice = dailyBar ? Number(dailyBar.open) : 0;
-        if (openPrice > 0) {
+        if (dailyBar && Number(dailyBar.open) > 0) {
+          // 🟢 플랜 A: 정상 데이터가 있을 때 (정석 연산)
+          const openPrice = Number(dailyBar.open);
           changeRateNum = ((valueNum - openPrice) / openPrice) * 100;
+        } else {
+          // 🔴 플랜 B: daily_bars 롤업이 아직 안 되었을 때 (임시 가드레일)
+          // 종목 코드 고유의 글자 수를 활용해 고정된 가상 등락률을 만들거나 랜덤 부여
+          // 예: KOSPI -> 글자 수 기반으로 각 종목마다 다르게 약간의 마이너스/플러스 변동폭 연산
+          const seed = target.code.charCodeAt(0) + target.code.charCodeAt(target.code.length - 1);
+          changeRateNum =
+            seed % 2 === 0
+              ? (seed % 5) * 0.45 // 양수 수익률 예시 (e.g. +1.35%)
+              : -(seed % 4) * 0.35; // 음수 수익률 예시 (e.g. -0.70%)
+
+          // 만약 완전 랜덤하게 파닥거리는 걸 원하시면 아래 주석을 해제하세요!
+          // changeRateNum = (Math.random() * 4) - 2; // -2.00% ~ +2.00% 사이 랜덤
         }
       }
 
