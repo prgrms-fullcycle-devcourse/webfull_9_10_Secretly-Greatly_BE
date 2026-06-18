@@ -24,7 +24,6 @@ import {
 } from "./swagger/stockItemFetchAll.swagger";
 import {
   STOCK_CANDLES_API_DESCRIPTION,
-  STOCK_CANDLES_INTERVAL_QUERY,
   STOCK_CANDLES_LIMIT_QUERY,
   STOCK_CANDLES_SUCCESS_API_RESPONSE,
 } from "./swagger/stockCandles.swagger";
@@ -114,7 +113,6 @@ export class StocksController {
     summary: "종목 캔들 차트 조회",
     description: STOCK_CANDLES_API_DESCRIPTION,
   })
-  @ApiQuery(STOCK_CANDLES_INTERVAL_QUERY)
   @ApiQuery(STOCK_CANDLES_LIMIT_QUERY)
   @ApiResponse(STOCK_CANDLES_SUCCESS_API_RESPONSE)
   async getCandles(
