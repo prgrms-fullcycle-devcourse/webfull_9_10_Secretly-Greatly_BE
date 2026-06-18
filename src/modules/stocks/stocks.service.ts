@@ -171,14 +171,21 @@ export class StocksService {
       throw new ForbiddenException("KIS 연동이 필요합니다.");
     }
 
+    const interval = query.interval ?? "1m";
     const limit = query.limit ?? 250;
 
     let candles: CandleDto[];
 
     if (stock.market === "KR") {
-      candles = await this.kisChartPriceService.fetchDomesticCandles(userId, stock.code, limit);
+      candles = await this.kisChartPriceService.fetchDomesticCandles(userId, stock.code, interval, limit);
     } else if (stock.market === "US") {
-      candles = await this.kisChartPriceService.fetchOverseasCandles(userId, stock.code, stock.exchange, limit);
+      candles = await this.kisChartPriceService.fetchOverseasCandles(
+        userId,
+        stock.code,
+        stock.exchange,
+        interval,
+        limit,
+      );
     } else {
       return { candles: [] };
     }
