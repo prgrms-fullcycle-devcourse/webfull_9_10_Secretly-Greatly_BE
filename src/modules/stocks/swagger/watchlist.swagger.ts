@@ -1,6 +1,6 @@
 import { HttpStatus } from "@nestjs/common";
 import { CreateWatchlistResponseDto } from "../dto/res/create-watchlist-response.dto";
-import { WatchlistResponseDto } from "../dto/res/watchlist-response.dto"; // 경로 확인 필요
+import { WatchlistResponseDto } from "../dto/res/watchlist-response.dto";
 
 export const WATCHLIST_SWAGGER = {
   create: {
@@ -30,7 +30,7 @@ export const WATCHLIST_SWAGGER = {
   findAll: {
     summary: "조건별 관심 종목(즐겨찾기) 동적 정렬 조회",
     description:
-      "인증 유저 및 익명 UUID 세션 유저의 즐겨찾기를 가져와 위장 정책(금융 기호 제거, 파일명 은폐, 다중 정렬)을 적용해 반환합니다.",
+      "인증 유저 및 익명 UUID 세션 유저의 즐겨찾기를 가져와 위장 정책(금융 기호 제거, 종목명 파일명 은폐, 다중 정렬)을 적용해 반환합니다.",
     ok: {
       status: HttpStatus.OK,
       description: "지정된 조건으로 필터링 및 컴파일된 관심 종목 목록을 반환합니다.",
@@ -48,11 +48,12 @@ export const WATCHLIST_SWAGGER = {
             items: [
               {
                 watchlistId: 101,
-                displayFileName: "nvda_config.json",
-                ticker: "NVDA",
-                currentPrice: 920.11,
-                fluctuationRate: 4.25,
-                volume: 4219500,
+                stockId: 12, // 💡 추가: 상세 차트 조회 및 라우팅 브릿지용 종목 고유 ID
+                displayFileName: "삼성전자.json", // 💡 변경: 종목 코드 대신 실제 종목명 기조로 파일명 마스킹 변환 예시 적용
+                ticker: "005930",
+                currentPrice: 77500,
+                fluctuationRate: 1.35, // 💡 특수 기호(%, ▲)가 완전히 배제된 순수 실수
+                volume: 12450000,
                 displayOrder: 1,
               },
             ],
