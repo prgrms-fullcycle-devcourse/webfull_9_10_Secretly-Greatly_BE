@@ -1,8 +1,16 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { AssetEntityNotFoundException } from "../../common/exceptions/asset-entity-not-found.exception";
 import { CreatePositionRequestDto } from "./dto/req/create-position-request.dto";
 import { CreatePositionResponseDto } from "./dto/res/create-position-response.dto";
+import { UpdatePositionRequestDto } from "./dto/req/update-position-request.dto";
 
 @Injectable()
 export class PositionsService {
@@ -82,6 +90,8 @@ export class PositionsService {
           positionId: position.id,
           stockId: stock.id,
           stockName: stock.name,
+          market: stock.market,
+
           averagePrice: Number(position.averagePrice),
           quantity: Number(position.quantity),
           totalInvestedAmount: Number(position.totalInvestedAmount),
@@ -105,9 +115,12 @@ export class PositionsService {
       stockId: position.stockId,
       stockCode: position.stock.code,
       stockName: position.stock.name,
+      market: position.stock.market,
+
       averagePrice: Number(position.averagePrice),
       quantity: Number(position.quantity),
       totalInvestedAmount: Number(position.totalInvestedAmount),
+
       createdAt: position.createdAt,
       updatedAt: position.updatedAt,
     }));
@@ -133,6 +146,58 @@ export class PositionsService {
 
     return {
       positionId: position.id,
+    };
+  }
+  async updatePosition(userId: string, positionId: number, dto: UpdatePositionRequestDto) {
+    if (dto.quantity === undefined && dto.averagePrice === undefined) {
+      throw new BadRequestException("수정할 매수 정보가 없습니다.");
+    }
+
+    const position = await this.prisma.position.findUnique({
+      where: { id: positionId },
+    });
+
+    if (!position) {
+      throw new NotFoundException("수정할 내 종목을 찾을 수 없습니다.");
+    }
+
+    if (position.userId !== userId) {
+      throw new ForbiddenException("해당 내 종목을 수정할 권한이 없습니다.");
+    }
+
+    const nextQuantity = dto.quantity ?? Number(position.quantity);
+
+    const nextAveragePrice = dto.averagePrice ?? Number(position.averagePrice);
+
+    const nextTotalInvestedAmount = Math.round(nextQuantity * nextAveragePrice * 100) / 100;
+
+    const updatedPosition = await this.prisma.position.update({
+      where: {
+        id: positionId,
+      },
+      data: {
+        quantity: nextQuantity,
+        averagePrice: nextAveragePrice,
+        totalInvestedAmount: nextTotalInvestedAmount,
+      },
+      include: {
+        stock: true,
+      },
+    });
+
+    return {
+      positionId: updatedPosition.id,
+      stockId: updatedPosition.stockId,
+      stockCode: updatedPosition.stock.code,
+      stockName: updatedPosition.stock.name,
+      market: updatedPosition.stock.market,
+
+      averagePrice: Number(updatedPosition.averagePrice),
+      quantity: Number(updatedPosition.quantity),
+      totalInvestedAmount: Number(updatedPosition.totalInvestedAmount),
+
+      createdAt: updatedPosition.createdAt,
+      updatedAt: updatedPosition.updatedAt,
     };
   }
 }
