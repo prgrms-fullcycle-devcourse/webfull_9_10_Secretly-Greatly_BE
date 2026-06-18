@@ -10,12 +10,14 @@ import {
   Post,
   Req,
   UseGuards,
+  Patch,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiBody, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { AuthenticatedRequest } from "../auth/interfaces/request.inerface";
 import { CustomResponse } from "../../common/responses/custom.response";
 import { CreatePositionRequestDto } from "./dto/req/create-position-request.dto";
+import { UpdatePositionRequestDto } from "./dto/req/update-position-request.dto";
 import { CreatePositionResponseDto } from "./dto/res/create-position-response.dto";
 import { PositionsService } from "./positions.service";
 import {
@@ -29,6 +31,11 @@ import {
   POSITIONS_DELETE_SUCCESS_API_RESPONSE,
   POSITIONS_FETCH_ALL_API_DESCRIPTION,
   POSITIONS_FETCH_ALL_SUCCESS_API_RESPONSE,
+  POSITIONS_UPDATE_API_DESCRIPTION,
+  POSITIONS_UPDATE_FORBIDDEN_API_RESPONSE,
+  POSITIONS_UPDATE_NOT_FOUND_API_RESPONSE,
+  POSITIONS_UPDATE_SUCCESS_API_RESPONSE,
+  POSITIONS_UPDATE_VALIDATION_API_RESPONSE,
   POSITIONS_UNAUTHORIZED_API_RESPONSE,
 } from "./swagger/positions.swagger";
 
@@ -114,5 +121,39 @@ export class PositionsController {
     const data = await this.positionsService.deletePosition(userId, positionId);
 
     return CustomResponse.success(data, "내 종목이 성공적으로 삭제되었습니다.");
+  }
+  @Patch(":positionId")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "내 종목 수정",
+    description: POSITIONS_UPDATE_API_DESCRIPTION,
+  })
+  @ApiBody({
+    type: UpdatePositionRequestDto,
+    examples: {
+      updatePosition: {
+        summary: "내 종목 수정 요청",
+        value: {
+          averagePrice: 28000,
+          quantity: 7,
+        },
+      },
+    },
+  })
+  @ApiResponse(POSITIONS_UPDATE_SUCCESS_API_RESPONSE)
+  @ApiResponse(POSITIONS_UPDATE_VALIDATION_API_RESPONSE)
+  @ApiResponse(POSITIONS_UPDATE_NOT_FOUND_API_RESPONSE)
+  @ApiResponse(POSITIONS_UPDATE_FORBIDDEN_API_RESPONSE)
+  @ApiResponse(POSITIONS_UNAUTHORIZED_API_RESPONSE)
+  async updatePosition(
+    @Req() req: AuthenticatedRequest,
+    @Param("positionId", ParseIntPipe) positionId: number,
+    @Body() body: UpdatePositionRequestDto,
+  ) {
+    const userId = req.user.sub;
+
+    const data = await this.positionsService.updatePosition(userId, positionId, body);
+
+    return CustomResponse.success(data, "내 종목 수정에 성공했습니다.");
   }
 }

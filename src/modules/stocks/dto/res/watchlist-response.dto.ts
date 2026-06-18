@@ -7,6 +7,7 @@ export class WatchlistStockItemDto {
   fluctuationRate: number;
   volume: number;
   displayOrder: number;
+  market: string;
 }
 
 export class WatchlistResponseDto {
