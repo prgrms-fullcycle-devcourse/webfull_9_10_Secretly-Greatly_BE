@@ -88,10 +88,10 @@ export class SimulationService {
   async getStatusBarIndicators(userId: string): Promise<StatusBarIndicatorDataDto> {
     const targets = [
       { code: "KOSPI", label: "KSP", id: "status.market.kospi" },
-      { code: "NASDAQ_FUTURE", label: "NSQ", id: "status.market.nasdaq" },
-      { code: "USD_KRW", label: "USDKRW", id: "status.market.exchange" },
-      { code: "US_10Y_BOND", label: "US10Y", id: "status.market.bond10y" },
-      { code: "VIX_INDEX", label: "VIX", id: "status.market.vix" },
+      { code: "KOSDAQ", label: "KSD", id: "status.market.kosdaq" },
+      { code: "NASDAQ", label: "NAS", id: "status.market.nasdaq" },
+      { code: "NASDAQ100", label: "NDX", id: "status.market.nasdaq100" },
+      { code: "SP500", label: "S&P", id: "status.market.sp500" },
     ] as const;
 
     const components = [];
@@ -131,8 +131,7 @@ export class SimulationService {
         }
       }
 
-      const decimalPlace = target.code === "US_10Y_BOND" ? 3 : 2;
-      const formattedValue = valueNum.toFixed(decimalPlace);
+      const formattedValue = valueNum.toFixed(2);
 
       const formattedRate = changeRateNum > 0 ? `+${changeRateNum.toFixed(2)}%` : `${changeRateNum.toFixed(2)}%`;
 
