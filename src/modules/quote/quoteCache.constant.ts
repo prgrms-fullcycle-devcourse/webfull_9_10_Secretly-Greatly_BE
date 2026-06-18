@@ -11,4 +11,10 @@ export interface CachedQuote {
   volume: number; // 거래량
   change: number; // 등락률 (% 기호 없는 순수 실수)
   capturedAt: string; // 수집 시각 (ISO)
+
+  fluctuationRateMap?: {
+    DAILY?: number;
+    M15?: number;
+    M30?: number;
+  };
 }
