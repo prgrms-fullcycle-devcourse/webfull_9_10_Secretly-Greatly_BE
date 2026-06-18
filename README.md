@@ -1,4 +1,8 @@
-# Secretly&Greatly
+<h1 align="center">
+  <img src="./img/icon.svg" width="80" alt="Secretly&Greatly logo"/>
+  <br/>
+  Secretly&Greatly
+</h1>
 
 ![img.png](img/img.png)
 
@@ -29,11 +33,8 @@
   <a href="https://secretly-greatly.vercel.app/">
     <img src="https://img.shields.io/badge/🚀_Live_Demo-바로가기-4169E1?style=for-the-badge" alt="Live Demo"/>
   </a>
-  <a href="노션_링크">
-    <img src="https://img.shields.io/badge/📑_Notion-프로젝트_문서-000000?style=for-the-badge&logo=notion&logoColor=white" alt="Notion"/>
-  </a>
-  <a href="시연영상_링크">
-    <img src="https://img.shields.io/badge/▶_Demo-YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Demo Video"/>
+  <a href="https://youtu.be/HbK7xlbog1c">
+    <img src="https://img.shields.io/badge/▶_시연_영상-YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Demo Video"/>
   </a>
 </p>
 
