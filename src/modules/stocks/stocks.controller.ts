@@ -27,7 +27,9 @@ import {
   STOCK_CANDLES_LIMIT_QUERY,
   STOCK_CANDLES_SUCCESS_API_RESPONSE,
 } from "./swagger/stockCandles.swagger";
+import { STOCK_QUOTES_SUCCESS_API_RESPONSE } from "./swagger/stockquotes.swagger";
 import { StocksService } from "./stocks.service";
+import { QuoteService } from "../quote/quote.service";
 import { AuthenticatedRequest } from "../auth/interfaces/request.inerface";
 import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
 import { CustomResponse } from "../../common/responses/custom.response";
@@ -39,11 +41,16 @@ import { WATCHLIST_SWAGGER } from "./swagger/watchlist.swagger";
 import { GetWatchlistQueryRequestDto } from "./dto/req/get-watchlist-query-request.dto";
 import { WatchlistResponseDto } from "./dto/res/watchlist-response.dto";
 import { DeleteWatchlistResponseDto } from "./dto/res/delete-watchlist-response.dto";
+import { GetQuotesRequestDto } from "./dto/req/get-quotes-request.dto";
+import { GetQuotesResponseDto } from "./dto/res/get-quotes-response.dto";
 
 @ApiTags("Stocks")
 @Controller("api/stocks")
 export class StocksController {
-  constructor(private readonly stockService: StocksService) {}
+  constructor(
+    private readonly stockService: StocksService,
+    private readonly quoteService: QuoteService,
+  ) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -64,6 +71,25 @@ export class StocksController {
       message: "조건에 부합하는 전체 종목 데이터 조회가 완료되었습니다.",
       data,
     };
+  }
+
+  @Post("/quotes")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiCookieAuth("accessToken")
+  @ApiOperation({
+    summary: "종목 시세 조회 (시세 시트용)",
+    description: "요청한 stockId 들의 현재 시세 + 등락률(전일/15분/30분 대비)을 반환합니다.",
+  })
+  @ApiResponse(STOCK_QUOTES_SUCCESS_API_RESPONSE)
+  async getQuotes(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: GetQuotesRequestDto,
+  ): Promise<CustomResponse<GetQuotesResponseDto>> {
+    const userId = req.user.sub;
+    const quotes = await this.quoteService.getQuotesWithChangeRate(userId, body.stockIds);
+    return CustomResponse.success({ quotes }, "요청한 종목의 시세 조회가 완료되었습니다.");
   }
 
   @Post("/watchlist")
