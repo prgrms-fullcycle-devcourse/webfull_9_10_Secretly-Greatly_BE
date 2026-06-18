@@ -224,6 +224,7 @@ export class StocksService {
         fluctuationRate: Number(rawFluctuation),
         volume: q?.volume ? Number(q.volume) : 0,
         displayOrder: 0,
+        market: MARKET_TO_RESPONSE[w.stock.market],
       };
     });
 
@@ -245,6 +246,7 @@ export class StocksService {
       currentPrice: item.currentPrice,
       fluctuationRate: item.fluctuationRate,
       volume: item.volume,
+      market: item.market,
       displayOrder: idx + 1,
     }));
 
