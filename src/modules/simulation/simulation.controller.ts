@@ -1,5 +1,5 @@
 import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards } from "@nestjs/common";
 import { SimulationService } from "./simulation.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { StockSimulationRequestDto } from "./dto/req/stock-simulation-request.dto";
@@ -9,10 +9,12 @@ import {
   SIMULATION_POSITION_NOT_FOUND_RESPONSE,
   SIMULATION_SUCCESS_RESPONSE,
   SIMULATION_VALIDATION_RESPONSE,
-} from "../auth/swagger/simulation.swagger";
+} from "./swagger/simulation.swagger";
 import { AuthenticatedRequest } from "../auth/interfaces/request.inerface";
+import { StatusBarIndicatorDataDto } from "./dto/res/market-indicator-statusbar-response.dto";
+import { INDICATOR_STATUSBAR_SUCCESS_RESPONSE } from "./swagger/indicator.swagger";
 
-@ApiTags("Simulation (자산 시뮬레이션)")
+@ApiTags("Simulation & Indicators (자산 시뮬레이션 및 시장 지표)")
 @Controller("api/indicators")
 export class SimulationController {
   constructor(private readonly simulationService: SimulationService) {}
@@ -22,7 +24,7 @@ export class SimulationController {
   @ApiBearerAuth()
   @ApiBody({ type: StockSimulationRequestDto })
   @HttpCode(HttpStatus.OK)
-  @ApiExtraModels(StockSimulationResponseDto)
+  @ApiExtraModels(StockSimulationResponseDto, StatusBarIndicatorDataDto)
   @ApiResponse(SIMULATION_SUCCESS_RESPONSE)
   @ApiResponse(SIMULATION_VALIDATION_RESPONSE)
   @ApiResponse(SIMULATION_POSITION_NOT_FOUND_RESPONSE)
@@ -40,5 +42,18 @@ export class SimulationController {
     const data = await this.simulationService.calculateAndSaveSimulation(userId, body);
 
     return CustomResponse.success(data, "가상 추가 매수 시뮬레이션 7대 자산 연산이 완료되었습니다.");
+  }
+
+  @Get("/statusbar")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "VSCode 상태 표시줄 위장 선행지표 조회",
+    description: "한국투자증권 파이프라인 캐시 데이터를 가공합니다.",
+  })
+  @ApiResponse(INDICATOR_STATUSBAR_SUCCESS_RESPONSE)
+  async getStatusBarIndicators(): Promise<CustomResponse<StatusBarIndicatorDataDto>> {
+    const data = await this.simulationService.getStatusBarIndicators();
+
+    return CustomResponse.success(data, "VSCode 에디터 하단 상태 표시줄 위장 선행지표 캐시 조회가 완료되었습니다.");
   }
 }

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   HttpCode,
@@ -35,7 +36,10 @@ import { OptionalJwtAuthGuard } from "../auth/guards/optional-jwt-auth.guard";
 import { CreateWatchlistRequestDto } from "./dto/req/create-watchlist-request.dto";
 import { CreateWatchlistResponseDto } from "./dto/res/create-watchlist-response.dto";
 import { GetStockCandlesQueryDto } from "./dto/req/get-stock-candles-query.dto";
-import { WATCHLIST_SWAGGER } from "./swagger/wathclist.swagger";
+import { WATCHLIST_SWAGGER } from "./swagger/watchlist.swagger";
+import { GetWatchlistQueryRequestDto } from "./dto/req/get-watchlist-query-request.dto";
+import { WatchlistResponseDto } from "./dto/res/watchlist-response.dto";
+import { DeleteWatchlistResponseDto } from "./dto/res/delete-watchlist-response.dto";
 
 @ApiTags("Stocks")
 @Controller("api/stocks")
@@ -80,6 +84,27 @@ export class StocksController {
     return CustomResponse.success(data, `관심 종목 [${data.stockName}]이(가) 성공적으로 생성되었습니다.`);
   }
 
+  @Get("/watchlist")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: WATCHLIST_SWAGGER.findAll.summary,
+    description: WATCHLIST_SWAGGER.findAll.description,
+  })
+  @ApiQuery(WATCHLIST_SWAGGER.findAll.queryParams.timeframe)
+  @ApiQuery(WATCHLIST_SWAGGER.findAll.queryParams.sortBy)
+  @ApiResponse(WATCHLIST_SWAGGER.findAll.ok)
+  async getWatchlist(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: GetWatchlistQueryRequestDto,
+  ): Promise<CustomResponse<WatchlistResponseDto>> {
+    const userId = req.user.sub;
+    const data = await this.stockService.getWatchlist(userId, query);
+
+    return CustomResponse.success(data, "지정된 조건으로 필터링된 즐겨찾기 목록을 반환합니다.");
+  }
+
   @Get(":stockId/candles")
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
@@ -98,5 +123,25 @@ export class StocksController {
     @Query() query: GetStockCandlesQueryDto,
   ) {
     return this.stockService.getCandles(req.user.sub, stockId, query);
+  }
+
+  @Delete("/watchlist/:watchlistId")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "즐겨찾기 종목 해제",
+    description: "즐겨찾기 종목을 해제합니다.",
+  })
+  @ApiResponse(WATCHLIST_SWAGGER.delete.ok)
+  @ApiResponse(WATCHLIST_SWAGGER.delete.notFound)
+  async deleteWatchlist(
+    @Req() req: AuthenticatedRequest,
+    @Param("watchlistId", ParseIntPipe) watchlistId: number,
+  ): Promise<CustomResponse<DeleteWatchlistResponseDto>> {
+    const userId = req.user.sub;
+    const data = await this.stockService.removeStockFromWatchlist(userId, watchlistId);
+
+    return CustomResponse.success(data, "즐겨찾기가 해제되었습니다.");
   }
 }
