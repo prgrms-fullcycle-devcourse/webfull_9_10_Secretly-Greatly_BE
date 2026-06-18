@@ -36,6 +36,8 @@ import { CreateWatchlistRequestDto } from "./dto/req/create-watchlist-request.dt
 import { CreateWatchlistResponseDto } from "./dto/res/create-watchlist-response.dto";
 import { GetStockCandlesQueryDto } from "./dto/req/get-stock-candles-query.dto";
 import { WATCHLIST_SWAGGER } from "./swagger/wathclist.swagger";
+import { GetWatchlistQueryRequestDto } from "./dto/req/get-watchlist-query-request.dto";
+import { WatchlistResponseDto } from "./dto/res/watchlist-response.dto";
 
 @ApiTags("Stocks")
 @Controller("api/stocks")
@@ -78,6 +80,27 @@ export class StocksController {
     const data = await this.stockService.addStockToWatchlist(userId, body);
 
     return CustomResponse.success(data, `관심 종목 [${data.stockName}]이(가) 성공적으로 생성되었습니다.`);
+  }
+
+  @Get("/watchlist")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: WATCHLIST_SWAGGER.findAll.summary,
+    description: WATCHLIST_SWAGGER.findAll.description,
+  })
+  @ApiQuery(WATCHLIST_SWAGGER.findAll.queryParams.timeframe)
+  @ApiQuery(WATCHLIST_SWAGGER.findAll.queryParams.sortBy)
+  @ApiResponse(WATCHLIST_SWAGGER.findAll.ok)
+  async getWatchlist(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: GetWatchlistQueryRequestDto,
+  ): Promise<CustomResponse<WatchlistResponseDto>> {
+    const userId = req.user.sub;
+    const data = await this.stockService.getWatchlist(userId, query);
+
+    return CustomResponse.success(data, "지정된 조건으로 필터링된 즐겨찾기 목록을 반환합니다.");
   }
 
   @Get(":stockId/candles")

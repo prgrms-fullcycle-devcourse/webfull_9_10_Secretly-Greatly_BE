@@ -12,6 +12,8 @@ import { WatchlistCapacityExceededException } from "../../common/exceptions/watc
 import { KisChartPriceService } from "../kis/price/kisChartPrice.service";
 import { GetStockCandlesQueryDto } from "./dto/req/get-stock-candles-query.dto";
 import { CandleDto } from "../kis/price/dto/kisChartPrice.dto";
+import { GetWatchlistQueryRequestDto, SortBy, Timeframe } from "./dto/req/get-watchlist-query-request.dto";
+import { WatchlistResponseDto } from "./dto/res/watchlist-response.dto";
 
 /**
  * 여러 종목 목록 + 최신 시세 조회 (종목 추가/검색 화면용)
@@ -94,7 +96,7 @@ export class StocksService {
     };
   }
 
-  // 관심 종목 등록 (최대 20개 제한)
+  // 즐겨찾기 관심 종목 등록 (최대 20개 제한)
   async addStockToWatchlist(userId: string, body: CreateWatchlistRequestDto): Promise<CreateWatchlistResponseDto> {
     this.logger.log(`📥 [Watchlist Engine] 유저 ${userId} - 종목 ID: ${body.stockId} 등록 시도`);
 
@@ -145,6 +147,7 @@ export class StocksService {
       totalRegisteredCount: currentCount + 1,
     };
   }
+
   async getCandles(userId: string, stockId: number, query: GetStockCandlesQueryDto): Promise<{ candles: CandleDto[] }> {
     const stock = await this.prisma.stock.findUnique({
       where: { id: stockId },
@@ -186,5 +189,62 @@ export class StocksService {
     }
 
     return { candles };
+  }
+
+  // 즐겨찾기 조회
+  async getWatchlist(userId: string, query: GetWatchlistQueryRequestDto): Promise<WatchlistResponseDto> {
+    const timeframe = query.timeframe ?? Timeframe.M15;
+    const sortBy = query.sortBy ?? SortBy.FLUCTUATION;
+
+    const watchlists = await this.prisma.watchlist.findMany({
+      where: { userId },
+      include: { stock: true },
+    });
+
+    if (watchlists.length === 0) {
+      return { currentTimeframe: timeframe, currentSortBy: sortBy, totalCount: 0, items: [] };
+    }
+
+    const stockIds = watchlists.map((w) => w.stockId);
+    const quotes = await this.quoteService.getLatestQuotes(userId, stockIds);
+
+    const items = watchlists.map((w) => {
+      const q = quotes.get(w.stockId);
+
+      const rawFluctuation = q?.fluctuationRateMap?.[timeframe] ?? q?.change ?? 0;
+
+      return {
+        watchlistId: w.id,
+        // aliasFilename이 있으면 적용, 없으면 기본 보호색 파일명 자동 빌드
+        displayFileName: w.aliasFilename ?? `${w.stock.code.toLowerCase()}_config.json`,
+        ticker: w.stock.code,
+        currentPrice: q?.price ? Number(q.price) : 0,
+        fluctuationRate: Number(rawFluctuation),
+        volume: q?.volume ? Number(q.volume) : 0,
+        displayOrder: 0,
+      };
+    });
+
+    items.sort((a, b) => {
+      if (sortBy === SortBy.PRICE) {
+        return b.currentPrice - a.currentPrice;
+      }
+      if (sortBy === SortBy.VOLUME) {
+        return b.volume - a.volume;
+      }
+      return b.fluctuationRate - a.fluctuationRate; // 기본값: FLUCTUATION
+    });
+
+    const formattedItems = items.map((item, idx) => ({
+      ...item,
+      displayOrder: idx + 1,
+    }));
+
+    return {
+      currentTimeframe: timeframe,
+      currentSortBy: sortBy,
+      totalCount: formattedItems.length,
+      items: formattedItems,
+    };
   }
 }
