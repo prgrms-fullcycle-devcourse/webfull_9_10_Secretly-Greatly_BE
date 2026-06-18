@@ -5,7 +5,6 @@ import { StockSimulationResponseDto } from "./dto/res/stock-simulation-response.
 import { AssetCodeNotFoundException } from "../../common/exceptions/asset-code-not-found.exception";
 import { formatOptimizerLog } from "../../common/utils/formatter.util";
 import { StatusBarIndicatorDataDto } from "./dto/res/market-indicator-statusbar-response.dto";
-import { IndicatorType } from "@prisma/client";
 
 @Injectable()
 export class SimulationService {
@@ -86,36 +85,56 @@ export class SimulationService {
   }
 
   // 5대 선행지표
-  async getStatusBarIndicators(): Promise<StatusBarIndicatorDataDto> {
+  async getStatusBarIndicators(userId: string): Promise<StatusBarIndicatorDataDto> {
     const targets = [
-      { key: IndicatorType.KOSPI, label: "KSP", id: "status.market.kospi" },
-      { key: IndicatorType.NASDAQ_FUTURE, label: "NSQ", id: "status.market.nasdaq" },
-      { key: IndicatorType.USD_KRW, label: "USDKRW", id: "status.market.exchange" },
-      { key: IndicatorType.US_10Y_BOND, label: "US10Y", id: "status.market.bond10y" },
-      { key: IndicatorType.VIX_INDEX, label: "VIX", id: "status.market.vix" },
+      { code: "KOSPI", label: "KSP", id: "status.market.kospi" },
+      { code: "NASDAQ_FUTURE", label: "NSQ", id: "status.market.nasdaq" },
+      { code: "USD_KRW", label: "USDKRW", id: "status.market.exchange" },
+      { code: "US_10Y_BOND", label: "US10Y", id: "status.market.bond10y" },
+      { code: "VIX_INDEX", label: "VIX", id: "status.market.vix" },
     ] as const;
 
     const components = [];
 
     for (const target of targets) {
-      const latestIndicator = await this.prisma.marketIndicator.findFirst({
+      const stockWithLatestTick = await this.prisma.stock.findFirst({
         where: {
-          indicatorType: target.key,
+          code: target.code,
+          assetType: "INDEX",
         },
-        orderBy: {
-          recordedAt: "desc",
+        include: {
+          ticks: {
+            where: { userId },
+            orderBy: { capturedAt: "desc" },
+            take: 1,
+          },
         },
       });
 
-      console.log(`📡 [지표 디버깅] ${target.key} 추출 결과 ->`, latestIndicator);
+      const latestTick = stockWithLatestTick?.ticks?.[0];
+      const valueNum = latestTick ? Number(latestTick.price) : 0;
 
-      const valueNum = latestIndicator ? Number(latestIndicator.value) : 0;
-      const changeRateNum = latestIndicator && latestIndicator.changeRate ? latestIndicator.changeRate.toNumber() : 0;
+      let changeRateNum = 0;
+      if (stockWithLatestTick && latestTick) {
+        const dailyBar = await this.prisma.dailyBar.findFirst({
+          where: {
+            stockId: stockWithLatestTick.id,
+            userId,
+          },
+          orderBy: { tradeDate: "desc" },
+        });
 
-      const decimalPlace = target.key === "US_10Y_BOND" ? 3 : 2;
+        // (현재가 - 시가) / 시가 * 100
+        const openPrice = dailyBar ? Number(dailyBar.open) : 0;
+        if (openPrice > 0) {
+          changeRateNum = ((valueNum - openPrice) / openPrice) * 100;
+        }
+      }
+
+      const decimalPlace = target.code === "US_10Y_BOND" ? 3 : 2;
       const formattedValue = valueNum.toFixed(decimalPlace);
 
-      const formattedRate = changeRateNum >= 0 ? `${changeRateNum.toFixed(2)}` : `${changeRateNum.toFixed(2)}`;
+      const formattedRate = changeRateNum > 0 ? `+${changeRateNum.toFixed(2)}%` : `${changeRateNum.toFixed(2)}%`;
 
       components.push({
         componentId: target.id,

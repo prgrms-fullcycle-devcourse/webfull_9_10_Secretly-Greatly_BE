@@ -13,6 +13,8 @@ import {
 import { AuthenticatedRequest } from "../auth/interfaces/request.inerface";
 import { StatusBarIndicatorDataDto } from "./dto/res/market-indicator-statusbar-response.dto";
 import { INDICATOR_STATUSBAR_SUCCESS_RESPONSE } from "./swagger/indicator.swagger";
+import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
+import { OptionalJwtAuthGuard } from "../auth/guards/optional-jwt-auth.guard";
 
 @ApiTags("Simulation & Indicators (자산 시뮬레이션 및 시장 지표)")
 @Controller("api/indicators")
@@ -46,13 +48,16 @@ export class SimulationController {
 
   @Get("/statusbar")
   @HttpCode(HttpStatus.OK)
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary: "VSCode 상태 표시줄 위장 선행지표 조회",
-    description: "한국투자증권 파이프라인 캐시 데이터를 가공합니다.",
+    description:
+      "유령 테이블을 제거하고 stocks 마스터(INDEX)와 유저별 ticks 데이터를 실시간 컴파일하여 한국투자증권 파이프라인 데이터를 가공합니다.",
   })
   @ApiResponse(INDICATOR_STATUSBAR_SUCCESS_RESPONSE)
-  async getStatusBarIndicators(): Promise<CustomResponse<StatusBarIndicatorDataDto>> {
-    const data = await this.simulationService.getStatusBarIndicators();
+  async getStatusBarIndicators(@Req() req: { user?: JwtPayload }): Promise<CustomResponse<StatusBarIndicatorDataDto>> {
+    const userId = req.user?.sub ?? "00000000-0000-0000-0000-000000000000";
+    const data = await this.simulationService.getStatusBarIndicators(userId);
 
     return CustomResponse.success(data, "VSCode 에디터 하단 상태 표시줄 위장 선행지표 캐시 조회가 완료되었습니다.");
   }
