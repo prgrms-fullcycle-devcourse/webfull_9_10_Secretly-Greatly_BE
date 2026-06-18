@@ -14,6 +14,8 @@ import { GetStockCandlesQueryDto } from "./dto/req/get-stock-candles-query.dto";
 import { CandleDto } from "../kis/price/dto/kisChartPrice.dto";
 import { GetWatchlistQueryRequestDto, SortBy, Timeframe } from "./dto/req/get-watchlist-query-request.dto";
 import { WatchlistResponseDto, WatchlistStockItemDto } from "./dto/res/watchlist-response.dto";
+import { DeleteWatchlistResponseDto } from "./dto/res/delete-watchlist-response.dto";
+import { WatchlistNotFoundException } from "../../common/exceptions/watchlist-not-found.exception";
 
 /**
  * 여러 종목 목록 + 최신 시세 조회 (종목 추가/검색 화면용)
@@ -251,6 +253,35 @@ export class StocksService {
       currentSortBy: sortBy,
       totalCount: formattedItems.length,
       items: formattedItems,
+    };
+  }
+
+  // 즐겨찾기 삭제
+  async removeStockFromWatchlist(userId: string, watchlistId: number): Promise<DeleteWatchlistResponseDto> {
+    const watchlist = await this.prisma.watchlist.findFirst({
+      where: { id: watchlistId, userId },
+    });
+
+    // 검증 실패 시 커스텀 에러
+    if (!watchlist) {
+      throw new WatchlistNotFoundException(watchlistId);
+    }
+
+    await this.prisma.watchlist.delete({
+      where: {
+        id: watchlistId,
+      },
+    });
+
+    const remainingCount = await this.prisma.watchlist.count({
+      where: {
+        userId,
+      },
+    });
+
+    return {
+      deletedWatchlistId: watchlistId,
+      remainingCount,
     };
   }
 }

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   HttpCode,
@@ -38,6 +39,7 @@ import { GetStockCandlesQueryDto } from "./dto/req/get-stock-candles-query.dto";
 import { WATCHLIST_SWAGGER } from "./swagger/watchlist.swagger";
 import { GetWatchlistQueryRequestDto } from "./dto/req/get-watchlist-query-request.dto";
 import { WatchlistResponseDto } from "./dto/res/watchlist-response.dto";
+import { DeleteWatchlistResponseDto } from "./dto/res/delete-watchlist-response.dto";
 
 @ApiTags("Stocks")
 @Controller("api/stocks")
@@ -121,5 +123,25 @@ export class StocksController {
     @Query() query: GetStockCandlesQueryDto,
   ) {
     return this.stockService.getCandles(req.user.sub, stockId, query);
+  }
+
+  @Delete("/watchlist/:watchlistId")
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "즐겨찾기 종목 해제",
+    description: "즐겨찾기 종목을 해제합니다.",
+  })
+  @ApiResponse(WATCHLIST_SWAGGER.delete.ok)
+  @ApiResponse(WATCHLIST_SWAGGER.delete.notFound)
+  async deleteWatchlist(
+    @Req() req: AuthenticatedRequest,
+    @Param("watchlistId", ParseIntPipe) watchlistId: number,
+  ): Promise<CustomResponse<DeleteWatchlistResponseDto>> {
+    const userId = req.user.sub;
+    const data = await this.stockService.removeStockFromWatchlist(userId, watchlistId);
+
+    return CustomResponse.success(data, "즐겨찾기가 해제되었습니다.");
   }
 }
