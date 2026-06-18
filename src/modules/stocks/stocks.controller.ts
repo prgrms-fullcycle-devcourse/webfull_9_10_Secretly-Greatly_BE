@@ -35,7 +35,7 @@ import { OptionalJwtAuthGuard } from "../auth/guards/optional-jwt-auth.guard";
 import { CreateWatchlistRequestDto } from "./dto/req/create-watchlist-request.dto";
 import { CreateWatchlistResponseDto } from "./dto/res/create-watchlist-response.dto";
 import { GetStockCandlesQueryDto } from "./dto/req/get-stock-candles-query.dto";
-import { WATCHLIST_SWAGGER } from "./swagger/wathclist.swagger";
+import { WATCHLIST_SWAGGER } from "./swagger/watchlist.swagger";
 import { GetWatchlistQueryRequestDto } from "./dto/req/get-watchlist-query-request.dto";
 import { WatchlistResponseDto } from "./dto/res/watchlist-response.dto";
 

@@ -13,7 +13,7 @@ import { KisChartPriceService } from "../kis/price/kisChartPrice.service";
 import { GetStockCandlesQueryDto } from "./dto/req/get-stock-candles-query.dto";
 import { CandleDto } from "../kis/price/dto/kisChartPrice.dto";
 import { GetWatchlistQueryRequestDto, SortBy, Timeframe } from "./dto/req/get-watchlist-query-request.dto";
-import { WatchlistResponseDto } from "./dto/res/watchlist-response.dto";
+import { WatchlistResponseDto, WatchlistStockItemDto } from "./dto/res/watchlist-response.dto";
 
 /**
  * 여러 종목 목록 + 최신 시세 조회 (종목 추가/검색 화면용)
@@ -191,7 +191,7 @@ export class StocksService {
     return { candles };
   }
 
-  // 즐겨찾기 조회
+  // 즐겨찾기 종목 전체 조회
   async getWatchlist(userId: string, query: GetWatchlistQueryRequestDto): Promise<WatchlistResponseDto> {
     const timeframe = query.timeframe ?? Timeframe.M15;
     const sortBy = query.sortBy ?? SortBy.FLUCTUATION;
@@ -215,8 +215,8 @@ export class StocksService {
 
       return {
         watchlistId: w.id,
-        // aliasFilename이 있으면 적용, 없으면 기본 보호색 파일명 자동 빌드
-        displayFileName: w.aliasFilename ?? `${w.stock.code.toLowerCase()}_config.json`,
+        stockId: w.stockId,
+        displayFileName: w.aliasFilename ?? `${w.stock.name}.json`,
         ticker: w.stock.code,
         currentPrice: q?.price ? Number(q.price) : 0,
         fluctuationRate: Number(rawFluctuation),
@@ -235,8 +235,14 @@ export class StocksService {
       return b.fluctuationRate - a.fluctuationRate; // 기본값: FLUCTUATION
     });
 
-    const formattedItems = items.map((item, idx) => ({
-      ...item,
+    const formattedItems: WatchlistStockItemDto[] = items.map((item, idx) => ({
+      watchlistId: item.watchlistId,
+      stockId: item.stockId,
+      displayFileName: item.displayFileName,
+      ticker: item.ticker,
+      currentPrice: item.currentPrice,
+      fluctuationRate: item.fluctuationRate,
+      volume: item.volume,
       displayOrder: idx + 1,
     }));
 
