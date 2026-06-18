@@ -16,6 +16,9 @@ export class CreatePositionResponseDto {
   @ApiProperty({ description: "보유 수량", example: 2 })
   quantity: number;
 
+  @ApiProperty({ description: "시장 구분", example: "KR", enum: ["KR", "US", "CRYPTO", "INDEX"] })
+  market: string;
+
   @ApiProperty({ description: "총 투자 금액", example: 140000 })
   totalInvestedAmount: number;
 }
