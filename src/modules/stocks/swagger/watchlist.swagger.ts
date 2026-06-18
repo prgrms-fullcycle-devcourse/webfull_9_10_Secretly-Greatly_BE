@@ -1,6 +1,7 @@
 import { HttpStatus } from "@nestjs/common";
 import { CreateWatchlistResponseDto } from "../dto/res/create-watchlist-response.dto";
 import { WatchlistResponseDto } from "../dto/res/watchlist-response.dto";
+import { DeleteWatchlistResponseDto } from "../dto/res/delete-watchlist-response.dto";
 
 export const WATCHLIST_SWAGGER = {
   create: {
@@ -48,11 +49,11 @@ export const WATCHLIST_SWAGGER = {
             items: [
               {
                 watchlistId: 101,
-                stockId: 12, // 💡 추가: 상세 차트 조회 및 라우팅 브릿지용 종목 고유 ID
-                displayFileName: "삼성전자.json", // 💡 변경: 종목 코드 대신 실제 종목명 기조로 파일명 마스킹 변환 예시 적용
+                stockId: 12,
+                displayFileName: "삼성전자.json",
                 ticker: "005930",
                 currentPrice: 77500,
-                fluctuationRate: 1.35, // 💡 특수 기호(%, ▲)가 완전히 배제된 순수 실수
+                fluctuationRate: 1.35,
                 volume: 12450000,
                 displayOrder: 1,
               },
@@ -73,6 +74,40 @@ export const WATCHLIST_SWAGGER = {
         required: false,
         description: "다중 정렬 필터 조건 (기본값: FLUCTUATION)",
         enum: ["FLUCTUATION", "PRICE", "VOLUME"],
+      },
+    },
+  },
+  delete: {
+    ok: {
+      status: HttpStatus.OK,
+      description: "가상 디렉토리 내 종목 파일 소거가 성공적으로 완료되었습니다.",
+      type: DeleteWatchlistResponseDto,
+      schema: {
+        example: {
+          statusCode: 200,
+          timestamp: "2026-06-02T14:18:22.456Z",
+          path: "/api/stocks/watchlist/101",
+          message: "가상 디렉토리 내 종목 파일 소거가 완료되었습니다.",
+          data: {
+            deletedWatchlistId: 101,
+            remainingCount: 3,
+          },
+          error: null,
+        },
+      },
+    },
+    notFound: {
+      status: HttpStatus.NOT_FOUND,
+      description: "해당 관심 종목 파일을 찾을 수 없거나 유저 소유권이 인증되지 않았습니다.",
+      schema: {
+        example: {
+          statusCode: 404,
+          timestamp: "2026-06-18T17:00:00.000Z",
+          path: "/api/stocks/watchlist/999",
+          message: "요청하신 가상 파일(ID: 999)을 디렉토리에서 찾을 수 없거나 접근 권한이 없습니다.",
+          error: "WatchlistNotFoundException",
+          data: null,
+        },
       },
     },
   },
