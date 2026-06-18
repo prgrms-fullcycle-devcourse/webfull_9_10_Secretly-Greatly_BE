@@ -10,6 +10,8 @@
 
 주변 시선을 완벽히 차단하도록 VS Code IDE 화면으로 마스킹된 개발자 전용 위장형 실시간 자산 관리 플랫폼입니다.
 
+<br>
+
 <p align="center">
   <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
   <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js"/>
