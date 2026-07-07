@@ -23,7 +23,8 @@ import { StreamModule } from "./modules/stream/stream.module";
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: "single",
-        url: `redis://${config.get("REDIS_HOST") ?? "localhost"}:${config.get("REDIS_PORT") ?? 6379}`,
+        //url: `redis://${config.get("REDIS_HOST") ?? "localhost"}:${config.get("REDIS_PORT") ?? 6379}`,
+        url: config.get<string>("REDIS_URL"),
       }),
     }),
     PrismaModule,
